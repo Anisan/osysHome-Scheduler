@@ -1,0 +1,51 @@
+{% extends "layouts/module_admin.html" %}
+{% from "macros/code_editor.html" import render_editor %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="Scheduler">Scheduler</a></li>
+<li class="breadcrumb-item">{{form.name.data}}</li>
+{% endblock %}
+{% block module %}
+
+{% if form.errors %}
+<div class="alert alert-warning mt-3">
+    <ul>
+    {% for field, errors in form.errors.items() %}
+        {% for error in errors %}
+            <li>{{field}}: {{ error }}</li>
+        {% endfor %}
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form id="form" method="POST">
+    <!-- Поля формы -->
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div>
+            {{ form.code.label(class="form-label") }}
+            {{ render_editor(form.code, 'python')}}
+        </div>
+        <div class="mb-3">
+            {{ form.crontab.label(class="form-label") }}
+            {{ form.crontab(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.runtime.label(class="form-label") }}
+            {{ form.runtime(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.expire.label(class="form-label") }}
+            {{ form.expire(class="form-control") }}
+        </div>
+    </div>
+    <!-- Кнопка отправки формы -->
+    <button type="submit" class="btn btn-primary">Submit</button>
+    <a href="Scheduler" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "layouts/module_admin.html" %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="Scheduler">Scheduler</a></li>
+{% endblock %}
+{% block module %}
+    <h1>Tasks</h1>
+    <a href="?op=add" class="btn btn-success btn-sm" role="button">Add</a>
+    <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Code</th>
+            <th scope="col">Runtime</th>
+            <th scope="col">Expire</th>
+            <th scope="col">Started</th>
+            <th scope="col">Crontab</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <th scope="row">{{task.id}}</th>
+            <td>{{task.name}}</td>
+            <td>{{task.code}}</td>
+            <td>{{task.runtime}}</td>
+            <td>{{task.expire}}</td>
+            <td>{{task.started}}</td>
+            <td>{{task.crontab}}</td>
+            <td>
+              <a href="?task={{task.id}}&op=edit" class="btn btn-success btn-sm" role="button">Edit</a>
+              <a href="?task={{task.id}}&op=delete" onClick="return confirm('Delete record?')" class="btn btn-warning btn-sm" role="button">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
