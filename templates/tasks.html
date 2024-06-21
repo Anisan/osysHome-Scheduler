@@ -3,8 +3,7 @@
 <li class="breadcrumb-item"><a href="Scheduler">Scheduler</a></li>
 {% endblock %}
 {% block module %}
-    <h1>Tasks</h1>
-    <a href="?op=add" class="btn btn-success btn-sm" role="button">Add</a>
+    <a href="?op=add" class="btn btn-success btn-sm" role="button"><i class="fas fa-plus me-2"></i>Add</a>
     <table class="table table-striped table-hover">
         <thead>
           <tr>
@@ -29,8 +28,8 @@
             <td>{{task.started}}</td>
             <td>{{task.crontab}}</td>
             <td>
-              <a href="?task={{task.id}}&op=edit" class="btn btn-success btn-sm" role="button">Edit</a>
-              <a href="?task={{task.id}}&op=delete" onClick="return confirm('Delete record?')" class="btn btn-warning btn-sm" role="button">Delete</a>
+              <a href="?task={{task.id}}&op=edit" class="btn btn-warning btn-sm" role="button"><i class="fas fa-edit me-2"></i>Edit</a>
+              <a href="?task={{task.id}}&op=delete" onClick="return confirm('Delete record?')" class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash me-2"></i>Delete</a>
             </td>
           </tr>
           {% endfor %}
