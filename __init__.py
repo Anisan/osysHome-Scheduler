@@ -32,7 +32,7 @@ class Scheduler(BasePlugin):
         self.title = "Sheduler"
         self.description = """This is a scheduler"""
         self.system = True
-        self.actions = ['cycle','search']
+        self.actions = ['cycle','search','widget']
         self.category = "System"
         self.version = "0.4"
 
@@ -54,7 +54,7 @@ class Scheduler(BasePlugin):
                 tsk = Task()
                 form.populate_obj(tsk)
                 if form.crontab.data == "":
-                    tsk.cronjob = None
+                    tsk.crontab = None
                     if not form.runtime.data:
                         tsk.runtime = datetime.datetime.now()
                     if not form.expire.data:
@@ -76,7 +76,7 @@ class Scheduler(BasePlugin):
                 if form.validate_on_submit():
                     form.populate_obj(tsk)
                     if form.crontab.data == "":
-                        tsk.cronjob = None
+                        tsk.crontab = None
                         if not form.runtime.data:
                             tsk.runtime = datetime.datetime.now()
                         if not form.expire.data:
@@ -101,6 +101,13 @@ class Scheduler(BasePlugin):
         for task in tasks:
             res.append({"url":f'Scheduler?op=edit&task={task.id}', "title":f'{task.name}', "tags":[{"name":"Task","color":"info"}]})
         return res
+    
+    def widget(self):
+        content = {}
+        with session_scope() as session:
+            content['crontab'] = session.query(Task).filter(Task.crontab is not None, Task.crontab != '').count()
+            content['count'] = session.query(Task).count()
+        return render_template("widget_scheduler.html",**content)
 
     def cyclic_task(self):
 
