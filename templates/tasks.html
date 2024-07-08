@@ -3,36 +3,165 @@
 <li class="breadcrumb-item"><a href="Scheduler">Scheduler</a></li>
 {% endblock %}
 {% block module %}
-    <a href="?op=add" class="btn btn-success btn-sm" role="button"><i class="fas fa-plus me-2"></i>Add</a>
-    <table class="table table-striped table-hover">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Name</th>
-            <th scope="col">Code</th>
-            <th scope="col">Runtime</th>
-            <th scope="col">Expire</th>
-            <th scope="col">Started</th>
-            <th scope="col">Crontab</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for task in tasks %}
-          <tr>
-            <th scope="row">{{task.id}}</th>
-            <td>{{task.name}}</td>
-            <td>{{task.code}}</td>
-            <td>{{task.runtime}}</td>
-            <td>{{task.expire}}</td>
-            <td>{{task.started}}</td>
-            <td>{{task.crontab}}</td>
-            <td>
-              <a href="?task={{task.id}}&op=edit" class="btn btn-warning btn-sm" role="button"><i class="fas fa-edit me-2"></i>Edit</a>
-              <a href="?task={{task.id}}&op=delete" onClick="return confirm('Delete record?')" class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash me-2"></i>Delete</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-    </table>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<div id="list_tasks">
+  <div class="d-flex justify-content-between">
+    <btn class="btn btn-primary btn-sm d-flex align-items-center" role="button" @click="fetchTasks()">
+      <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      <i v-else class="fas fa-rotate me-2"></i>
+      Refresh
+    </btn>
+    <a href="?op=add" class="btn btn-success btn-sm mx-2 d-flex align-items-center" role="button"><i class="fas fa-plus me-2"></i>Add</a>
+    <input v-model="search" type="text" class="form-control" placeholder="Search...">
+  </div>
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col" @click="sortBy('name')" :class="getSortClass('name')">Name</th>
+        <th scope="col" @click="sortBy('code')" :class="getSortClass('code')">Code</th>
+        <th scope="col" @click="sortBy('runtime')" :class="getSortClass('runtime')">runtime</th>
+        <th scope="col" @click="sortBy('expire')" :class="getSortClass('expire')">Expire</th>
+        <th scope="col" @click="sortBy('started')" :class="getSortClass('started')">Started</th>
+        <th scope="col" @click="sortBy('cronetab')" :class="getSortClass('cronetab')">Crontab</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="task,index in filteredData" :key="index">
+        <th scope="row">[[task.id]]</th>
+        <td>[[task.name]]</td>
+        <td>[[task.code]]</td>
+        <td>[[task.runtime]]</td>
+        <td>[[task.expire]]</td>
+        <td>[[task.started]]</td>
+        <td>[[task.crontab]]</td>
+        <td>
+          <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
+              class="fas fa-edit me-2"></i>Edit</a>
+          <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
+            class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash me-2"></i>Delete</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<script>
+  new Vue({
+    el: '#list_tasks',
+    delimiters: ['[[', ']]'], // Измененные разделители
+    data: {
+      search: '',
+      sortKey: 'runtime',
+      sortAsc: true,
+      tasks: [],
+      loading: false,
+      error: null,
+    },
+    async created() {
+      await this.fetchTasks()
+    },
+    mounted() {
+      if (localStorage.scheduler_search) {
+        this.search = localStorage.scheduler_search;
+      }
+      if (localStorage.scheduler_sortKey) {
+        this.sortKey = localStorage.scheduler_sortKey;
+      }
+      if (localStorage.scheduler_sortAsc) {
+        this.sortAsc = localStorage.scheduler_sortAsc;
+      }
+    },
+    watch: {
+      search(value) {
+        localStorage.scheduler_search = value;
+      },
+      sortKey(value) {
+        localStorage.scheduler_sortKey = value;
+      },
+      sortAsc(value) {
+        localStorage.scheduler_sortAsc = value;
+      },
+    },
+    computed: {
+      filteredData() {
+        let data = this.tasks;
+
+        if (this.search) {
+          data = data.filter(row =>
+            Object.values(row).some(val =>
+              String(val).toLowerCase().includes(this.search.toLowerCase())
+            )
+          );
+        }
+
+        if (this.sortKey) {
+          data = data.slice().sort((a, b) => {
+            let aVal = a[this.sortKey];
+            let bVal = b[this.sortKey];
+
+            if (aVal < bVal) return this.sortAsc ? -1 : 1;
+            if (aVal > bVal) return this.sortAsc ? 1 : -1;
+            return 0;
+          });
+        }
+
+        return data;
+      },
+    },
+    methods: {
+      fetchTasks() {
+        this.loading = true
+        axios.get(`/api/Scheduler/tasks`)
+          .then(response => {
+            this.tasks = response.data.result
+            this.loading = false
+          })
+          .catch(error => {
+            console.log(error)
+            self.error = error
+            this.loading = false
+          })
+          ;
+      },
+      sortBy(key) {
+        if (this.sortKey === key) {
+          this.sortAsc = !this.sortAsc;
+        } else {
+          this.sortKey = key;
+          this.sortAsc = true;
+        }
+      },
+      getSortClass(key) {
+        if (this.sortKey === key) {
+          return this.sortAsc ? 'sortable asc' : 'sortable desc';
+        } else {
+          return '';
+        }
+      },
+    }
+  });
+</script>
+<style>
+  .sortable {
+      cursor: pointer;
+  }
+  .sortable:after {
+      content: '';
+      float: right;
+      margin-left: 5px;
+      border-width: 0 10px 10px;
+      border-style: solid;
+      border-color: transparent transparent #000 transparent;
+  }
+  .sortable.asc:after {
+      border-width: 10px 10px 0;
+      border-color: #000 transparent transparent transparent;
+  }
+  .sortable.desc:after {
+      border-width: 0 10px 10px;
+      border-color: transparent transparent #000 transparent;
+  }
+</style>
 {% endblock %}

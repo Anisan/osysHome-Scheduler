@@ -17,12 +17,13 @@ import threading
 import datetime
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
-from app.database import db, session_scope, row2dict
+from app.database import db, session_scope, row2dict, getSession
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
 from app.core.lib.common import runCode, clearTimeout
 from plugins.Scheduler.forms.TaskForm import TaskForm
 from app.core.lib.crontab import nextStartCronJob
+from app.api import api
 
 
 class Scheduler(BasePlugin):
@@ -35,6 +36,11 @@ class Scheduler(BasePlugin):
         self.actions = ['cycle','search','widget']
         self.category = "System"
         self.version = "0.4"
+        self.session = getSession()
+
+        from plugins.Scheduler.api import create_api_ns
+        api_ns = create_api_ns()
+        api.add_namespace(api_ns, path="/Scheduler")
 
     def initialization(self):
         pass
@@ -88,12 +94,8 @@ class Scheduler(BasePlugin):
                     session.commit()
                     return redirect("Scheduler")
             return self.render("task.html", {"form": form})
-        res = []
-        with session_scope() as session:
-            tasks = session.query(Task).order_by(Task.runtime).all()
-            for tsk in tasks:
-                res.append(row2dict(tsk))
-        return render_template("tasks.html", tasks=res)
+
+        return render_template("tasks.html")
 
     def search(self, query: str) -> list:
         res = []
