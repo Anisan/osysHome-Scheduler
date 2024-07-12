@@ -136,9 +136,11 @@ class Scheduler(BasePlugin):
                 self.session.commit()
 
             def wrapper():
-                runCode(code)
+                res, success = runCode(code)
+                if not success:
+                    self.logger.error(res)
 
             thread = threading.Thread(target=wrapper)
             thread.start()
 
-        time.sleep(1)
+        self.event.wait(1.0)
