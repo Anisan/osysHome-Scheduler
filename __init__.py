@@ -1,5 +1,5 @@
-""" 
-# Sheduler plugin 
+"""
+# Sheduler plugin
 
 Plugin for completing tasks on time
 
@@ -12,12 +12,11 @@ Supports:
 - global search
 
 """
-import time
 import threading
 import datetime
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
-from app.database import db, session_scope, row2dict, getSession
+from app.database import session_scope
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
 from app.core.lib.common import runCode, clearTimeout
@@ -36,8 +35,7 @@ class Scheduler(BasePlugin):
         self.actions = ['cycle','search','widget']
         self.category = "System"
         self.version = "0.4"
-        self.session = getSession()
-
+        
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns()
         api.add_namespace(api_ns, path="/Scheduler")
@@ -101,9 +99,9 @@ class Scheduler(BasePlugin):
         res = []
         tasks = Task.query.filter(or_(Task.name.contains(query),Task.code.contains(query))).all()
         for task in tasks:
-            res.append({"url":f'Scheduler?op=edit&task={task.id}', "title":f'{task.name}', "tags":[{"name":"Task","color":"info"}]})
+            res.append({"url":f'Scheduler?op=edit&task={task.id}', "title": f'{task.name}', "tags": [{"name":"Task","color":"info"}]})
         return res
-    
+
     def widget(self):
         content = {}
         with session_scope() as session:
@@ -112,35 +110,35 @@ class Scheduler(BasePlugin):
         return render_template("widget_scheduler.html",**content)
 
     def cyclic_task(self):
+        with session_scope() as session:
+            sql = delete(Task).where(Task.expire < datetime.datetime.now())
+            session.execute(sql)
+            session.commit()
 
-        sql = delete(Task).where(Task.expire < datetime.datetime.now())
-        self.session.execute(sql)
-        self.session.commit()
+            tasks = (
+                session.query(Task)
+                .filter(Task.runtime <= datetime.datetime.now())
+                .all()
+            )
+            for task in tasks:
+                self.logger.debug('Running task %s', task.name)
+                code = task.code
+                task.started = datetime.datetime.now()
+                session.commit()
+                if not task.crontab:
+                    clearTimeout(task.name)
+                else:
+                    dt = nextStartCronJob(task.crontab)
+                    task.runtime = dt
+                    task.expire = dt + datetime.timedelta(1800)
+                    session.commit()
 
-        tasks = (
-            self.session.query(Task)
-            .filter(Task.runtime <= datetime.datetime.now())
-            .all()
-        )
-        for task in tasks:
-            self.logger.debug('Running task %s',task.name)
-            code = task.code
-            task.started = datetime.datetime.now()
-            self.session.commit()
-            if not task.crontab:
-                clearTimeout(task.name)
-            else:
-                dt = nextStartCronJob(task.crontab)
-                task.runtime = dt
-                task.expire = dt + datetime.timedelta(1800)
-                self.session.commit()
+                def wrapper():
+                    res, success = runCode(code)
+                    if not success:
+                        self.logger.error(res)
 
-            def wrapper():
-                res, success = runCode(code)
-                if not success:
-                    self.logger.error(res)
-
-            thread = threading.Thread(target=wrapper)
-            thread.start()
+                thread = threading.Thread(target=wrapper)
+                thread.start()
 
         self.event.wait(1.0)
