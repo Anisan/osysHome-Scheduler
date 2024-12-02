@@ -7,11 +7,11 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <div id="list_tasks">
   <div class="d-flex justify-content-between">
-    <btn class="btn btn-primary btn-sm d-flex align-items-center" role="button" @click="fetchTasks()">
-      <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      <i v-else class="fas fa-rotate me-2"></i>
+    <button  class="btn btn-primary btn-sm d-flex align-items-center" type="button" @click="fetchTasks()">
+      <span v-if="loading" class="fas fa-rotate fa-spin me-2"></span>
+      <span v-else class="fas fa-rotate me-2"></span>
       Refresh
-    </btn>
+    </button >
     <a href="?op=add" class="btn btn-success btn-sm mx-2 d-flex align-items-center" role="button"><i class="fas fa-plus me-2"></i>Add</a>
     <input v-model="search" type="text" class="form-control" placeholder="Search...">
   </div>
