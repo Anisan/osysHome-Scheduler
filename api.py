@@ -2,7 +2,8 @@ import json
 from flask import request
 from flask_restx import Namespace, Resource
 from sqlalchemy import delete
-from app.api.decorators import api_key_required, role_required
+from app.api.decorators import api_key_required
+from app.authentication.handlers import handle_admin_required
 from app.api.models import model_404, model_result
 from app.core.models.Tasks import Task
 from app.database import row2dict, session_scope
@@ -20,7 +21,7 @@ def create_api_ns():
 @_api_ns.route("/tasks", endpoint="scheduer_tasks")
 class GetTasks(Resource):
     @api_key_required
-    @role_required("admin")
+    @handle_admin_required
     @_api_ns.doc(security="apikey")
     @_api_ns.response(200, "List tasks", response_result)
     def get(self):
@@ -35,6 +36,8 @@ class GetTasks(Resource):
 
 @_api_ns.route("/task/<task_id>", endpoint="scheduer_task")
 class EndpointTask(Resource):
+    @api_key_required
+    @handle_admin_required
     def get(self,task_id: int):
         """ Get task """
         with session_scope() as session:
@@ -43,6 +46,8 @@ class EndpointTask(Resource):
                 result = row2dict(task)
                 return {"success": True, "result": result}, 200
             return {"success": False, "msg": "Task not found"}, 404
+    @api_key_required
+    @handle_admin_required
     def post(self,task_id):
         """ Create/update task """
         with session_scope() as session:
@@ -60,6 +65,8 @@ class EndpointTask(Resource):
             task.crontab = data['crontab']
             session.commit()
             return {"success": True}, 200
+    @api_key_required
+    @handle_admin_required
     def delete(self,task_id):
         """ Delete task """
         with session_scope() as session:
