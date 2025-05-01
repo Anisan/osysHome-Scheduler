@@ -1,4 +1,3 @@
-import json
 from flask import request
 from flask_restx import Namespace, Resource
 from sqlalchemy import delete
@@ -6,7 +5,7 @@ from app.api.decorators import api_key_required
 from app.authentication.handlers import handle_admin_required
 from app.api.models import model_404, model_result
 from app.core.models.Tasks import Task
-from app.database import row2dict, session_scope
+from app.database import row2dict, session_scope, convert_local_to_utc
 
 _api_ns = Namespace(name="Scheduler", description="Scheduler namespace", validate=True)
 
@@ -60,9 +59,9 @@ class EndpointTask(Resource):
             task.name = data['name']
             task.code = data['code']
             task.expire = data['expire']
-            task.runtime = data['runtime']
-            task.started = data['started']
-            task.crontab = data['crontab']
+            task.runtime = convert_local_to_utc(data['runtime'])
+            task.started = convert_local_to_utc(data['started'])
+            task.crontab = convert_local_to_utc(data['crontab'])
             session.commit()
             return {"success": True}, 200
     @api_key_required

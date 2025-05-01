@@ -16,7 +16,7 @@ import threading
 import datetime
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
-from app.database import session_scope
+from app.database import session_scope, convert_local_to_utc, convert_utc_to_local
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
 from app.core.lib.common import runCode, clearTimeout
@@ -60,13 +60,18 @@ class Scheduler(BasePlugin):
                 if form.crontab.data == "":
                     tsk.crontab = None
                     if not form.runtime.data:
-                        tsk.runtime = datetime.datetime.now()
+                        tsk.runtime = datetime.datetime.now(datetime.timezone.utc)
+                    else:
+                        tsk.runtime = convert_local_to_utc(form.runtime.data)
                     if not form.expire.data:
-                        tsk.expire = datetime.datetime.now() + datetime.timedelta(1800)
+                        tsk.expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(1800)
+                    else:
+                        tsk.expire = convert_local_to_utc(form.expire.data)
                 else:
                     dt = nextStartCronJob(tsk.crontab)
-                    tsk.runtime = dt
-                    tsk.expire = dt + datetime.timedelta(1800)
+                    utc_dt = convert_local_to_utc(dt)
+                    tsk.runtime = utc_dt
+                    tsk.expire = utc_dt + datetime.timedelta(1800)
                 with session_scope() as session:
                     session.add(tsk)
                     session.commit()
@@ -82,15 +87,24 @@ class Scheduler(BasePlugin):
                     if form.crontab.data == "":
                         tsk.crontab = None
                         if not form.runtime.data:
-                            tsk.runtime = datetime.datetime.now()
+                            tsk.runtime = datetime.datetime.now(datetime.timezone.utc)
+                        else:
+                            tsk.runtime = convert_local_to_utc(form.runtime.data)
                         if not form.expire.data:
-                            tsk.expire = datetime.datetime.now() + datetime.timedelta(1800)
+                            tsk.expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(1800)
+                        else:
+                            tsk.expire = convert_local_to_utc(form.expire.data)
                     else:
                         dt = nextStartCronJob(tsk.crontab)
-                        tsk.runtime = dt
-                        tsk.expire = dt + datetime.timedelta(1800)
+                        utc_dt = convert_local_to_utc(dt)
+                        tsk.runtime = utc_dt
+                        tsk.expire = utc_dt + datetime.timedelta(1800)
                     session.commit()
                     return redirect("Scheduler")
+                if form.runtime.data:
+                    form.runtime.data = convert_utc_to_local(form.runtime.data)
+                if form.expire.data:
+                    form.expire.data = convert_utc_to_local(form.expire.data)
             return self.render("task.html", {"form": form})
 
         return render_template("tasks.html")
@@ -111,26 +125,27 @@ class Scheduler(BasePlugin):
 
     def cyclic_task(self):
         with session_scope() as session:
-            sql = delete(Task).where(Task.expire < datetime.datetime.now())
+            sql = delete(Task).where(Task.expire < datetime.datetime.now(datetime.timezone.utc))
             session.execute(sql)
             session.commit()
 
             tasks = (
                 session.query(Task)
-                .filter(Task.runtime <= datetime.datetime.now())
+                .filter(Task.runtime <= datetime.datetime.now(datetime.timezone.utc))
                 .all()
             )
             for task in tasks:
                 self.logger.debug('Running task %s', task.name)
                 code = task.code
-                task.started = datetime.datetime.now()
+                task.started = datetime.datetime.now(datetime.timezone.utc)
                 session.commit()
                 if not task.crontab:
                     clearTimeout(task.name)
                 else:
                     dt = nextStartCronJob(task.crontab)
-                    task.runtime = dt
-                    task.expire = dt + datetime.timedelta(1800)
+                    utc_dt = convert_local_to_utc(dt)
+                    task.runtime = utc_dt
+                    task.expire = utc_dt + datetime.timedelta(1800)
                     session.commit()
 
                 def wrapper():
