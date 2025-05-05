@@ -33,15 +33,15 @@
         <th scope="row">[[task.id]]</th>
         <td>[[task.name]]</td>
         <td>[[task.code]]</td>
-        <td>[[task.runtime]]</td>
-        <td>[[task.expire]]</td>
-        <td>[[task.started]]</td>
-        <td>[[task.crontab]]</td>
-        <td>
+        <td nowrap>[[task.runtime]]</td>
+        <td nowrap>[[task.expire]]</td>
+        <td nowrap>[[task.started]]</td>
+        <td nowrap>[[task.crontab]]</td>
+        <td nowrap>
           <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
-              class="fas fa-edit me-2"></i>Edit</a>
+              class="fas fa-edit"></i></a>
           <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
-            class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash me-2"></i>Delete</a>
+            class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash"></i></a>
         </td>
       </tr>
     </tbody>
