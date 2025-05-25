@@ -1,6 +1,6 @@
 {% extends "layouts/module_admin.html" %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="Scheduler">Scheduler</a></li>
+<li class="breadcrumb-item"><a href="Scheduler">{{ _('Scheduler')}}</a></li>
 {% endblock %}
 {% block module %}
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/vue@2.js"></script>
@@ -10,22 +10,22 @@
     <button  class="btn btn-primary btn-sm d-flex align-items-center" type="button" @click="fetchTasks()">
       <span v-if="loading" class="fas fa-rotate fa-spin me-2"></span>
       <span v-else class="fas fa-rotate me-2"></span>
-      Refresh
+      {{ _('Refresh')}}
     </button >
-    <a href="?op=add" class="btn btn-success btn-sm mx-2 d-flex align-items-center" role="button"><i class="fas fa-plus me-2"></i>Add</a>
-    <input v-model="search" type="text" class="form-control" placeholder="Search...">
+    <a href="?op=add" class="btn btn-success btn-sm mx-2 d-flex align-items-center" role="button"><i class="fas fa-plus me-2"></i>{{ _('Add')}}</a>
+    <input v-model="search" type="text" class="form-control" placeholder="{{ _('Search...')}}">
   </div>
   <table class="table table-striped table-hover">
     <thead>
       <tr>
         <th scope="col">#</th>
-        <th scope="col" @click="sortBy('name')" :class="getSortClass('name')">Name</th>
-        <th scope="col" @click="sortBy('code')" :class="getSortClass('code')">Code</th>
-        <th scope="col" @click="sortBy('runtime')" :class="getSortClass('runtime')">runtime</th>
-        <th scope="col" @click="sortBy('expire')" :class="getSortClass('expire')">Expire</th>
-        <th scope="col" @click="sortBy('started')" :class="getSortClass('started')">Started</th>
-        <th scope="col" @click="sortBy('cronetab')" :class="getSortClass('cronetab')">Crontab</th>
-        <th>Actions</th>
+        <th scope="col" @click="sortBy('name')" :class="getSortClass('name')">{{ _('Name')}}</th>
+        <th scope="col" @click="sortBy('code')" :class="getSortClass('code')">{{ _('Code')}}</th>
+        <th scope="col" @click="sortBy('runtime')" :class="getSortClass('runtime')">{{ _('Runtime')}}</th>
+        <th scope="col" @click="sortBy('expire')" :class="getSortClass('expire')">{{ _('Expire')}}</th>
+        <th scope="col" @click="sortBy('started')" :class="getSortClass('started')">{{ _('Started')}}</th>
+        <th scope="col" @click="sortBy('cronetab')" :class="getSortClass('cronetab')">{{ _('Cron')}}</th>
+        <th>{{ _('Actions')}}</th>
       </tr>
     </thead>
     <tbody>
@@ -39,9 +39,9 @@
         <td nowrap>[[task.crontab]]</td>
         <td nowrap>
           <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
-              class="fas fa-edit"></i></a>
+              class="fas fa-edit" title="{{ _('Edit')}}"></i></a>
           <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
-            class="btn btn-danger btn-sm" role="button"><i class="fas fa-trash"></i></a>
+            class="btn btn-danger btn-sm" role="button" title="{{ _('Delete')}}"><i class="fas fa-trash"></i></a>
         </td>
       </tr>
     </tbody>
