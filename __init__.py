@@ -12,7 +12,8 @@ Supports:
 - global search
 
 """
-import threading
+import concurrent.futures
+from threading import Lock
 import datetime
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
@@ -29,19 +30,20 @@ class Scheduler(BasePlugin):
 
     def __init__(self, app):
         super().__init__(app, __name__)
-        self.title = "Sheduler"
+        self.title = "Scheduler"
         self.description = """This is a scheduler"""
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.4"
-        
+        self.version = "0.5"
+
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns()
         api.add_namespace(api_ns, path="/Scheduler")
 
     def initialization(self):
-        pass
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+        self._executor_lock = Lock()
 
     def admin(self, request):
         op = request.args.get("op", None)
@@ -153,7 +155,7 @@ class Scheduler(BasePlugin):
                     if not success:
                         self.logger.error(res)
 
-                thread = threading.Thread(target=wrapper)
-                thread.start()
+                with self._executor_lock:
+                    self._executor.submit(wrapper)
 
         self.event.wait(1.0)
