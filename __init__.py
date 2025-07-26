@@ -24,6 +24,7 @@ from app.core.lib.common import runCode, clearTimeout
 from plugins.Scheduler.forms.TaskForm import TaskForm
 from app.core.lib.crontab import nextStartCronJob
 from app.api import api
+from collections import deque
 
 
 class Scheduler(BasePlugin):
@@ -51,7 +52,7 @@ class Scheduler(BasePlugin):
         self._max_concurrent_tasks = 0
 
         # Мониторинг времени выполнения
-        self._execution_times = []
+        self._execution_times = deque(maxlen=100)
         self._total_execution_time = 0
         self._avg_execution_time = 0
         self._min_execution_time = float('inf')
@@ -214,22 +215,17 @@ class Scheduler(BasePlugin):
 
                         # Обновляем статистику времени выполнения
                         with self._executor_lock:
-                            self._execution_times.append(execution_time)
-                            self._total_execution_time += execution_time
+                            if len(self._execution_times) == 100:  
+                                self._total_execution_time -= self._execution_times[0]  
 
-                            # Обновляем min/max время
-                            if execution_time < self._min_execution_time:
-                                self._min_execution_time = execution_time
-                            if execution_time > self._max_execution_time:
-                                self._max_execution_time = execution_time
+                            self._execution_times.append(execution_time)  
+                            self._total_execution_time += execution_time  
 
-                            # Храним только последние 100 записей
-                            if len(self._execution_times) > 100:
-                                removed_time = self._execution_times.pop(0)
-                                self._total_execution_time -= removed_time
-
-                            self._avg_execution_time = self._total_execution_time / len(self._execution_times)
-
+                            if self._execution_times:  
+                                self._min_execution_time = min(self._execution_times)  
+                                self._max_execution_time = max(self._execution_times)  
+                                self._avg_execution_time = self._total_execution_time / len(self._execution_times)
+                            
                             # Добавляем в историю для графиков
                             self._execution_history.append({
                                 'time': time.time(),
