@@ -70,6 +70,7 @@ new Vue({
   },  
   methods: {  
     initChart() {  
+      const self = this;
       const ctx = document.getElementById('executionChart').getContext('2d');  
       const history = this.stats.history;
         
@@ -102,11 +103,13 @@ new Vue({
                 tooltip: {  
                     callbacks: {  
                         title: function(context) {  
-                        const item = history[context[0].dataIndex];  
+                        const currentHistory = self.stats.history;  
+                        const item = currentHistory[context[0].dataIndex];   
                         return `${item.task_name}`;  
                         },  
                         label: function(context) {  
-                        const item = history[context.dataIndex];  
+                        const currentHistory = self.stats.history;  
+                        const item = currentHistory[context.dataIndex];   
                         const status = item.success ? '✅' : '❌';  
                         return [  
                             `{{ _('Time end')}}: ${item.time}`,  
@@ -136,7 +139,7 @@ new Vue({
     updateChart() {  
         const history = this.stats.history;  
         this.chart.data.labels = history.map((item, index) => index);  
-        this.chart.data.datasets[0].data = history.map(item => item.duration);    
+        this.chart.data.datasets[0].data = history.map(item => item.duration);  
         this.chart.update();  
     }, 
       
