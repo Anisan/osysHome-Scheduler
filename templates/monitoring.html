@@ -1,0 +1,142 @@
+{% extends "scheduler_main.html" %}
+{% block tab %}
+<script src="{{ config.ASSETS_ROOT }}/plugins/vue/vue@2.js"></script>  
+<script src="{{ config.ASSETS_ROOT }}/plugins/vue/axios.min.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+  
+<div id="monitoring_app">  
+  <div class="container-fluid">  
+     
+    <!-- Статистика пула потоков -->  
+    <div class="row mb-4">  
+      <div class="col-md-6">  
+        <div class="card">  
+          <div class="card-header">{{ _('Thread Pool Statistics')}}</div>  
+          <div class="card-body">  
+            <div class="row">  
+              <div class="col-sm-6">  
+                <span class="badge bg-primary">{{ _('Max Workers')}}: [[stats.thread_pool.max_workers]]</span>  
+              </div>  
+              <div class="col-sm-6">  
+                <span class="badge bg-info">{{ _('Active Tasks')}}: [[stats.thread_pool.active_tasks]]</span>  
+              </div>  
+            </div>  
+            <div class="row mt-2">  
+              <div class="col-sm-6">  
+                <span class="badge bg-success">{{ _('Completed')}}: [[stats.thread_pool.completed_tasks]]</span>  
+              </div>  
+              <div class="col-sm-6">  
+                <span class="badge bg-danger">{{ _('Failed')}}: [[stats.thread_pool.failed_tasks]]</span>  
+              </div>  
+            </div>  
+          </div>  
+        </div>  
+      </div>  
+        
+      <div class="col-md-6">  
+        <div class="card">  
+          <div class="card-header">{{ _('Execution Time Statistics')}}</div>  
+          <div class="card-body">  
+            <div class="row">  
+              <div class="col-sm-6">  
+                <span class="badge bg-primary">{{ _('Average')}}: [[stats.execution_time.avg_execution_time]]s</span>  
+              </div>  
+              <div class="col-sm-6">  
+                <span class="badge bg-info">{{ _('Min')}}: [[stats.execution_time.min_execution_time]]s</span>  
+              </div>  
+            </div>  
+            <div class="row mt-2">  
+              <div class="col-sm-6">  
+                <span class="badge bg-warning">{{ _('Max')}}: [[stats.execution_time.max_execution_time]]s</span>  
+              </div>  
+              <div class="col-sm-6">  
+                <span class="badge bg-success">{{ _('Total')}}: [[stats.execution_time.total_execution_time]]s</span>  
+              </div>  
+            </div>  
+          </div>  
+        </div>  
+      </div>  
+    </div>  
+      
+    <!-- Графики -->  
+    <div class="row">  
+      <div class="col-md-12">  
+        <div class="card">  
+          <div class="card-header">{{ _('Execution Time History')}}</div>  
+          <div class="card-body">  
+            <canvas id="executionChart" width="400" height="200"></canvas>  
+          </div>  
+        </div>  
+      </div>  
+    </div>  
+  </div>  
+</div>  
+  
+<script>  
+new Vue({  
+  el: '#monitoring_app',  
+  delimiters: ['[[', ']]'],  
+  data: {  
+    stats: {{ stats|tojson }},  
+    chart: null  
+  },  
+  mounted() {  
+    this.initChart();  
+    this.startAutoRefresh();  
+  },  
+  methods: {  
+    initChart() {  
+      const ctx = document.getElementById('executionChart').getContext('2d');  
+      const history = this.stats.history.execution_times;  
+        
+      this.chart = new Chart(ctx, {  
+        type: 'line',  
+        data: {  
+          labels: history.map((item, index) => index),  
+          datasets: [{  
+            label: 'Execution Time (seconds)',  
+            data: history.map(item => item.duration),  
+            borderColor: 'rgb(75, 192, 192)',  
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',  
+            tension: 0.1  
+          }]  
+        },  
+        options: {  
+          responsive: true,  
+          scales: {  
+            y: {  
+              beginAtZero: true  
+            }  
+          }  
+        }  
+      });  
+    },  
+      
+    async refreshStats() {  
+      try {  
+        const response = await axios.get('/api/Scheduler/monitoring');  
+        if (response.data.success) {  
+          this.stats = response.data.result;  
+          this.updateChart();  
+        }  
+      } catch (error) {  
+        console.error('Error refreshing stats:', error);  
+      }  
+    },  
+      
+    updateChart() {  
+      const history = this.stats.history.execution_times;  
+      this.chart.data.labels = history.map((item, index) => index);  
+      this.chart.data.datasets[0].data = history.map(item => item.duration);  
+      this.chart.update();  
+    },  
+      
+    startAutoRefresh() {  
+      setInterval(() => {  
+        this.refreshStats();  
+      }, 5000); // Обновление каждые 5 секунд  
+    }  
+  }  
+});  
+</script>  
+{% endblock %}

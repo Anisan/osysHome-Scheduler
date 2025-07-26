@@ -1,6 +1,13 @@
 <h3><a href="admin/Scheduler"><img class="me-2" height="30px" src="/Scheduler/static/Scheduler.png">{{ _('Scheduler')}}</a></h3>
 <h4>{{ _('Statistics')}}</h4>
-<h5><span class="badge bg-success">{{ _('Count')}}: {{count}}</span></h5>
+<h5><span class="badge bg-success">{{ _('Count')}}: {{count}}</span>
 {%if crontab > 0%}
-<h5><span class="badge bg-primary">{{ _('Cron')}}: {{crontab}}</span></h5>
+<span class="badge bg-primary">{{ _('Cron')}}: {{crontab}}</span>
+{%endif%}
+</h5>
+{%if monitoring%}  
+<h4>{{ _('Monitoring')}}</h4>  
+<h6><span class="badge bg-info">{{ _('Active')}}: {{monitoring.thread_pool.active_tasks}}</span>  
+<span class="badge bg-success">{{ _('Completed')}}: {{monitoring.thread_pool.completed_tasks}}</span>
+<span class="badge bg-warning">{{ _('Avg Time')}}: {{monitoring.execution_time.avg_execution_time}}s</span></h6>  
 {%endif%}

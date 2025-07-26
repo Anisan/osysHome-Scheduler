@@ -6,14 +6,18 @@ from app.authentication.handlers import handle_admin_required
 from app.api.models import model_404, model_result
 from app.core.models.Tasks import Task
 from app.database import row2dict, session_scope, convert_local_to_utc
+from plugins.Scheduler import Scheduler
 
 _api_ns = Namespace(name="Scheduler", description="Scheduler namespace", validate=True)
 
 response_result = _api_ns.model("Result", model_result)
 response_404 = _api_ns.model("Error", model_404)
 
+_instance: Scheduler = None
 
-def create_api_ns():
+def create_api_ns(instance:Scheduler):
+    global _instance
+    _instance = instance
     return _api_ns
 
 
@@ -73,3 +77,14 @@ class EndpointTask(Resource):
             session.execute(sql)
             session.commit()
             return {"success": True}, 200
+
+@_api_ns.route("/monitoring", endpoint="scheduler_monitoring")  
+class GetMonitoring(Resource):  
+    @api_key_required  
+    @handle_admin_required  
+    @_api_ns.doc(security="apikey")  
+    @_api_ns.response(200, "Monitoring stats", response_result)  
+    def get(self):  
+        """Получение статистики мониторинга"""  
+        stats = _instance.get_monitoring_stats()  
+        return {"success": True, "result": stats}, 200  

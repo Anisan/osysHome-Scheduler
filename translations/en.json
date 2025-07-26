@@ -1,7 +1,19 @@
 {
+  "Active Tasks": "Active Tasks",
+  "Average": "Average",
+  "Avg Time": "Avg Time",
+  "Completed": "Completed",
   "Count": "Count",
+  "Execution Time History": "Execution Time History",
+  "Execution Time Statistics": "Execution Time Statistics",
   "Expire": "Expire",
+  "Failed": "Failed",
+  "Max Workers": "Max Workers",
+  "Monitoring": "Monitoring",
   "Scheduler": "Scheduler",
   "Search...": "Search...",
-  "Started": "Started"
+  "Started": "Started",
+  "Tasks": "Tasks",
+  "Thread Pool Statistics": "Thread Pool Statistics",
+  "Total": "Total"
 }

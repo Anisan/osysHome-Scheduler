@@ -1,8 +1,5 @@
-{% extends "layouts/module_admin.html" %}
-{% block breadcrumb %}
-<li class="breadcrumb-item"><a href="Scheduler">{{ _('Scheduler')}}</a></li>
-{% endblock %}
-{% block module %}
+{% extends "scheduler_main.html" %}
+{% block tab %}
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/vue@2.js"></script>
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/axios.min.js"></script>
 <div id="list_tasks">
@@ -47,6 +44,7 @@
     </tbody>
   </table>
 </div>
+
 <script>
   new Vue({
     el: '#list_tasks',
