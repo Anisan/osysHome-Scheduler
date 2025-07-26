@@ -15,6 +15,7 @@ Supports:
 import concurrent.futures
 from threading import Lock
 import datetime
+from functools import partial
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
 from app.database import session_scope, convert_local_to_utc, convert_utc_to_local, get_now_to_utc
@@ -36,7 +37,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.5"
+        self.version = "0.6"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)
@@ -59,8 +60,7 @@ class Scheduler(BasePlugin):
         self._max_execution_time = 0
 
         # История для графиков (последние 100 записей)
-        self._execution_history = []
-        self._task_count_history = []
+        self._execution_history = deque(maxlen=100)
 
     def admin(self, request):
         op = request.args.get("op", None)
@@ -167,10 +167,7 @@ class Scheduler(BasePlugin):
                     'max_execution_time': round(self._max_execution_time, 3),
                     'total_execution_time': round(self._total_execution_time, 3)
                 },
-                'history': {
-                    'execution_times': self._execution_history,
-                    'task_counts': self._task_count_history
-                }
+                'history': list(self._execution_history)
             }
 
     def cyclic_task(self):
@@ -186,8 +183,6 @@ class Scheduler(BasePlugin):
             )
             for task in tasks:
                 self.logger.debug('Running task %s', task.name)
-                code = task.code
-                task_name = task.name
                 task.started = get_now_to_utc()
                 session.commit()
                 if not task.crontab:
@@ -199,64 +194,69 @@ class Scheduler(BasePlugin):
                     task.expire = utc_dt + datetime.timedelta(1800)
                     session.commit()
 
-                def wrapper():
-                    import time
-                    start_time = time.time()
+                def create_wrapper(task_name, code):
+                    def wrapper():
+                        import time
+                        start_time = time.time()
 
-                    # Увеличиваем счетчик активных задач
-                    with self._executor_lock:
-                        self._active_tasks += 1
-                        if self._active_tasks > self._max_concurrent_tasks:
-                            self._max_concurrent_tasks = self._active_tasks
-
-                    try:
-                        res, success = runCode(code)
-                        execution_time = time.time() - start_time
-
-                        # Обновляем статистику времени выполнения
+                        # Увеличиваем счетчик активных задач
                         with self._executor_lock:
-                            if len(self._execution_times) == 100:  
-                                self._total_execution_time -= self._execution_times[0]  
+                            self._active_tasks += 1
+                            if self._active_tasks > self._max_concurrent_tasks:
+                                self._max_concurrent_tasks = self._active_tasks
 
-                            self._execution_times.append(execution_time)  
-                            self._total_execution_time += execution_time  
+                        try:
+                            res, success = runCode(code)
+                            execution_time = time.time() - start_time
 
-                            if self._execution_times:  
-                                self._min_execution_time = min(self._execution_times)  
-                                self._max_execution_time = max(self._execution_times)  
-                                self._avg_execution_time = self._total_execution_time / len(self._execution_times)
-                            
-                            # Добавляем в историю для графиков
-                            self._execution_history.append({
-                                'time': time.time(),
-                                'duration': execution_time,
-                                'task_name': task_name,
-                                'success': success
-                            })
+                            # Обновляем статистику времени выполнения
+                            with self._executor_lock:
+                                if len(self._execution_times) == 100:
+                                    self._total_execution_time -= self._execution_times[0]
 
-                            if success:
-                                self._completed_tasks += 1
+                                self._execution_times.append(execution_time)
+                                self._total_execution_time += execution_time
+
+                                if self._execution_times:
+                                    self._min_execution_time = min(self._execution_times)
+                                    self._max_execution_time = max(self._execution_times)
+                                    self._avg_execution_time = self._total_execution_time / len(self._execution_times)
+
+                                # Добавляем в историю для графиков
+                                current_time = datetime.datetime.now()
+                                self._execution_history.append({
+                                    'timestamp': current_time.timestamp() * 1000,  # Миллисекунды для Chart.js
+                                    'time': current_time.strftime('%H:%M:%S.%f')[:-3],
+                                    'duration': execution_time,
+                                    'task_name': task_name,
+                                    'success': success
+                                })
+
+                                if success:
+                                    self._completed_tasks += 1
+                                else:
+                                    self._failed_tasks += 1
+
+                            if not success:
+                                self.logger.error('Task "%s" failed after %.3f seconds: %s',
+                                                task_name, execution_time, res)
                             else:
+                                self.logger.debug('Task "%s" completed in %.3f seconds',
+                                            task_name, execution_time)
+
+                        except Exception as e:
+                            execution_time = time.time() - start_time
+                            with self._executor_lock:
                                 self._failed_tasks += 1
+                            self.logger.error('Task "%s" crashed after %.3f seconds: %s',
+                                            task_name, execution_time, str(e))
+                        finally:
+                            # Уменьшаем счетчик активных задач
+                            with self._executor_lock:
+                                self._active_tasks -= 1
+                    return wrapper
 
-                        if not success:
-                            self.logger.error('Task "%s" failed after %.3f seconds: %s',
-                                            task_name, execution_time, res)
-                        else:
-                            self.logger.info('Task "%s" completed in %.3f seconds',
-                                        task_name, execution_time)
-
-                    except Exception as e:
-                        execution_time = time.time() - start_time
-                        with self._executor_lock:
-                            self._failed_tasks += 1
-                        self.logger.error('Task "%s" crashed after %.3f seconds: %s',
-                                        task_name, execution_time, str(e))
-                    finally:
-                        # Уменьшаем счетчик активных задач
-                        with self._executor_lock:
-                            self._active_tasks -= 1
-
+                wrapper = create_wrapper(task.name, task.code)
                 with self._executor_lock:
                     self._executor.submit(wrapper)
 

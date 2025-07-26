@@ -3,6 +3,7 @@
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/vue@2.js"></script>  
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/axios.min.js"></script>  
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   
 <div id="monitoring_app">  
   <div class="container-fluid">  
@@ -13,21 +14,14 @@
         <div class="card">  
           <div class="card-header">{{ _('Thread Pool Statistics')}}</div>  
           <div class="card-body">  
-            <div class="row">  
-              <div class="col-sm-6">  
+            <div>  
                 <span class="badge bg-primary">{{ _('Max Workers')}}: [[stats.thread_pool.max_workers]]</span>  
-              </div>  
-              <div class="col-sm-6">  
                 <span class="badge bg-info">{{ _('Active Tasks')}}: [[stats.thread_pool.active_tasks]]</span>  
-              </div>  
+                <span class="badge bg-secondary">{{ _('Max Active Tasks')}}: [[stats.thread_pool.max_concurrent_tasks]]</span>  
             </div>  
-            <div class="row mt-2">  
-              <div class="col-sm-6">  
+            <div class="mt-2">  
                 <span class="badge bg-success">{{ _('Completed')}}: [[stats.thread_pool.completed_tasks]]</span>  
-              </div>  
-              <div class="col-sm-6">  
                 <span class="badge bg-danger">{{ _('Failed')}}: [[stats.thread_pool.failed_tasks]]</span>  
-              </div>  
             </div>  
           </div>  
         </div>  
@@ -37,21 +31,11 @@
         <div class="card">  
           <div class="card-header">{{ _('Execution Time Statistics')}}</div>  
           <div class="card-body">  
-            <div class="row">  
-              <div class="col-sm-6">  
+            <div>  
                 <span class="badge bg-primary">{{ _('Average')}}: [[stats.execution_time.avg_execution_time]]s</span>  
-              </div>  
-              <div class="col-sm-6">  
                 <span class="badge bg-info">{{ _('Min')}}: [[stats.execution_time.min_execution_time]]s</span>  
-              </div>  
-            </div>  
-            <div class="row mt-2">  
-              <div class="col-sm-6">  
                 <span class="badge bg-warning">{{ _('Max')}}: [[stats.execution_time.max_execution_time]]s</span>  
-              </div>  
-              <div class="col-sm-6">  
                 <span class="badge bg-success">{{ _('Total')}}: [[stats.execution_time.total_execution_time]]s</span>  
-              </div>  
             </div>  
           </div>  
         </div>  
@@ -87,27 +71,52 @@ new Vue({
   methods: {  
     initChart() {  
       const ctx = document.getElementById('executionChart').getContext('2d');  
-      const history = this.stats.history.execution_times;  
+      const history = this.stats.history;
         
       this.chart = new Chart(ctx, {  
         type: 'line',  
         data: {  
           labels: history.map((item, index) => index),  
           datasets: [{  
-            label: 'Execution Time (seconds)',  
-            data: history.map(item => item.duration),  
+            label: "{{ _('Execution Time History')}}",  
+            data: history.map(item => item.duration),   
             borderColor: 'rgb(75, 192, 192)',  
             backgroundColor: 'rgba(75, 192, 192, 0.2)',  
             tension: 0.1  
           }]  
         },  
         options: {  
-          responsive: true,  
-          scales: {  
-            y: {  
-              beginAtZero: true  
-            }  
-          }  
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {  
+                x: {  
+                    ticks: {  
+                    display: false  // Скрываем подписи оси X  
+                    }, 
+                }, 
+                y: {  
+                    beginAtZero: true,  
+                }  
+            },
+            plugins: {  
+                tooltip: {  
+                    callbacks: {  
+                        title: function(context) {  
+                        const item = history[context[0].dataIndex];  
+                        return `${item.task_name}`;  
+                        },  
+                        label: function(context) {  
+                        const item = history[context.dataIndex];  
+                        const status = item.success ? '✅' : '❌';  
+                        return [  
+                            `{{ _('Time end')}}: ${item.time}`,  
+                            `{{ _('Duration')}}: ${item.duration.toFixed(3)} sec`,  
+                            `{{ _('Status')}}: ${status}`  
+                        ];  
+                        }  
+                    }  
+                }  
+            }    
         }  
       });  
     },  
@@ -125,11 +134,11 @@ new Vue({
     },  
       
     updateChart() {  
-      const history = this.stats.history.execution_times;  
-      this.chart.data.labels = history.map((item, index) => index);  
-      this.chart.data.datasets[0].data = history.map(item => item.duration);  
-      this.chart.update();  
-    },  
+        const history = this.stats.history;  
+        this.chart.data.labels = history.map((item, index) => index);  
+        this.chart.data.datasets[0].data = history.map(item => item.duration);    
+        this.chart.update();  
+    }, 
       
     startAutoRefresh() {  
       setInterval(() => {  
