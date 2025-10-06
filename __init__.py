@@ -12,21 +12,17 @@ Supports:
 - global search
 
 """
-import concurrent.futures
-from threading import Lock
 import datetime
-from functools import partial
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
 from app.database import session_scope, convert_local_to_utc, convert_utc_to_local, get_now_to_utc
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
-from app.core.lib.common import runCode, clearTimeout
+from app.core.lib.common import runCode, clearTimeout, addCronJob
 from plugins.Scheduler.forms.TaskForm import TaskForm
 from app.core.lib.crontab import nextStartCronJob
 from app.api import api
-from collections import deque
-
+from app.core.MonitoredThreadPool import MonitoredThreadPool
 
 class Scheduler(BasePlugin):
 
@@ -44,29 +40,19 @@ class Scheduler(BasePlugin):
         api.add_namespace(api_ns, path="/Scheduler")
 
     def initialization(self):
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
-        self._executor_lock = Lock()
-        # Мониторинг пула потоков
-        self._active_tasks = 0
-        self._completed_tasks = 0
-        self._failed_tasks = 0
-        self._max_concurrent_tasks = 0
-
-        # Мониторинг времени выполнения
-        self._execution_times = deque(maxlen=100)
-        self._total_execution_time = 0
-        self._avg_execution_time = 0
-        self._min_execution_time = float('inf')
-        self._max_execution_time = 0
-
-        # История для графиков (последние 100 записей)
-        self._execution_history = deque(maxlen=100)
+        self.poolThread = MonitoredThreadPool(thread_name_prefix=self.name)
+        # Настройка мониторинга
+        self.poolThread.set_monitoring_callbacks(
+            on_start=lambda task_id, _: self.logger.debug(f"Starting task '{task_id}'"),
+            on_complete=lambda task_id, exec_time: self.logger.debug(f"Completed task '{task_id}' in {exec_time:.2f}s"),
+            on_error=lambda task_id, error: self.logger.error(f"Task '{task_id}' failed: {error}")
+        )
 
     def admin(self, request):
         op = request.args.get("op", None)
         tab = request.args.get("tab", "")
         if tab == "monitoring":
-            stats = self.get_monitoring_stats()
+            stats = self.poolThread.get_monitoring_stats()
             return self.render("monitoring.html", {"stats": stats, "tab":tab})
 
         if op == "delete":
@@ -146,29 +132,8 @@ class Scheduler(BasePlugin):
             content['crontab'] = session.query(Task).filter(Task.crontab is not None, Task.crontab != '').count()
             content['count'] = session.query(Task).count()
         if hasattr(self, '_active_tasks'):
-            content['monitoring'] = self.get_monitoring_stats()
+            content['monitoring'] = self.poolThread.get_monitoring_stats()
         return render_template("widget_scheduler.html",**content)
-
-    def get_monitoring_stats(self):
-        """Получение полной статистики мониторинга"""
-        with self._executor_lock:
-            return {
-                'thread_pool': {
-                    'max_workers': self._executor._max_workers,
-                    'active_tasks': self._active_tasks,
-                    'completed_tasks': self._completed_tasks,
-                    'failed_tasks': self._failed_tasks,
-                    'max_concurrent_tasks': self._max_concurrent_tasks,
-                    'queue_size': len(self._executor._work_queue.queue) if hasattr(self._executor._work_queue, 'queue') else 0
-                },
-                'execution_time': {
-                    'avg_execution_time': round(self._avg_execution_time, 3) if self._avg_execution_time else 0,
-                    'min_execution_time': round(self._min_execution_time, 3) if self._min_execution_time != float('inf') else 0,
-                    'max_execution_time': round(self._max_execution_time, 3),
-                    'total_execution_time': round(self._total_execution_time, 3)
-                },
-                'history': list(self._execution_history)
-            }
 
     def cyclic_task(self):
         with session_scope() as session:
@@ -188,76 +153,18 @@ class Scheduler(BasePlugin):
                 if not task.crontab:
                     clearTimeout(task.name)
                 else:
-                    dt = nextStartCronJob(task.crontab)
-                    utc_dt = convert_local_to_utc(dt)
-                    task.runtime = utc_dt
-                    task.expire = utc_dt + datetime.timedelta(1800)
-                    session.commit()
+                    addCronJob(task.name, task.code, task.crontab)
 
-                def create_wrapper(task_name, code):
+                def task_wrapper(code):
                     def wrapper():
-                        import time
-                        start_time = time.time()
-
-                        # Увеличиваем счетчик активных задач
-                        with self._executor_lock:
-                            self._active_tasks += 1
-                            if self._active_tasks > self._max_concurrent_tasks:
-                                self._max_concurrent_tasks = self._active_tasks
-
-                        try:
-                            res, success = runCode(code)
-                            execution_time = time.time() - start_time
-
-                            # Обновляем статистику времени выполнения
-                            with self._executor_lock:
-                                if len(self._execution_times) == 100:
-                                    self._total_execution_time -= self._execution_times[0]
-
-                                self._execution_times.append(execution_time)
-                                self._total_execution_time += execution_time
-
-                                if self._execution_times:
-                                    self._min_execution_time = min(self._execution_times)
-                                    self._max_execution_time = max(self._execution_times)
-                                    self._avg_execution_time = self._total_execution_time / len(self._execution_times)
-
-                                # Добавляем в историю для графиков
-                                current_time = datetime.datetime.now()
-                                self._execution_history.append({
-                                    'timestamp': current_time.timestamp() * 1000,  # Миллисекунды для Chart.js
-                                    'time': current_time.strftime('%H:%M:%S.%f')[:-3],
-                                    'duration': execution_time,
-                                    'task_name': task_name,
-                                    'success': success
-                                })
-
-                                if success:
-                                    self._completed_tasks += 1
-                                else:
-                                    self._failed_tasks += 1
-
-                            if not success:
-                                self.logger.error('Task "%s" failed after %.3f seconds: %s',
-                                                task_name, execution_time, res)
-                            else:
-                                self.logger.debug('Task "%s" completed in %.3f seconds',
-                                            task_name, execution_time)
-
-                        except Exception as e:
-                            execution_time = time.time() - start_time
-                            with self._executor_lock:
-                                self._failed_tasks += 1
-                            self.logger.error('Task "%s" crashed after %.3f seconds: %s',
-                                            task_name, execution_time, str(e))
-                        finally:
-                            # Уменьшаем счетчик активных задач
-                            with self._executor_lock:
-                                self._active_tasks -= 1
+                        res, success = runCode(code)
+                        if not success:
+                            self.logger.error(res)
+                        else:
+                            if res:
+                                self.logger.debug(res)
                     return wrapper
 
-                wrapper = create_wrapper(task.name, task.code)
-                with self._executor_lock:
-                    self._executor.submit(wrapper)
+                self.poolThread.submit(task_wrapper(task.code), task_id=task.name)
 
         self.event.wait(1.0)

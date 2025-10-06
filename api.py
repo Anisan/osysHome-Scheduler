@@ -78,13 +78,13 @@ class EndpointTask(Resource):
             session.commit()
             return {"success": True}, 200
 
-@_api_ns.route("/monitoring", endpoint="scheduler_monitoring")  
-class GetMonitoring(Resource):  
-    @api_key_required  
-    @handle_admin_required  
-    @_api_ns.doc(security="apikey")  
-    @_api_ns.response(200, "Monitoring stats", response_result)  
-    def get(self):  
-        """Получение статистики мониторинга"""  
-        stats = _instance.get_monitoring_stats()  
-        return {"success": True, "result": stats}, 200  
+@_api_ns.route("/monitoring", endpoint="scheduler_monitoring")
+class GetMonitoring(Resource):
+    @api_key_required
+    @handle_admin_required
+    @_api_ns.doc(security="apikey")
+    @_api_ns.response(200, "Monitoring stats", response_result)
+    def get(self):
+        """Получение статистики мониторинга"""
+        stats = _instance.poolThread.get_monitoring_stats()
+        return {"success": True, "result": stats}, 200
