@@ -18,7 +18,7 @@ from sqlalchemy import delete, or_
 from app.database import session_scope, convert_local_to_utc, convert_utc_to_local, get_now_to_utc
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
-from app.core.lib.common import runCode, clearTimeout, addCronJob
+from app.core.lib.common import runCode, clearTimeout, addCronJob, addNotify, CategoryNotify
 from plugins.Scheduler.forms.TaskForm import TaskForm
 from app.core.lib.crontab import nextStartCronJob
 from app.api import api
@@ -45,7 +45,8 @@ class Scheduler(BasePlugin):
         self.poolThread.set_monitoring_callbacks(
             on_start=lambda task_id, _: self.logger.debug(f"Starting task '{task_id}'"),
             on_complete=lambda task_id, exec_time: self.logger.debug(f"Completed task '{task_id}' in {exec_time:.2f}s"),
-            on_error=lambda task_id, error: self.logger.error(f"Task '{task_id}' failed: {error}")
+            on_error=lambda task_id, error: self.logger.error(f"Task '{task_id}' failed: {error}"),
+            on_pool_reset=lambda: addNotify("Pool reset", "Pool reset: read logs thread_pools", CategoryNotify.Warning, self.name)
         )
 
     def admin(self, request):
