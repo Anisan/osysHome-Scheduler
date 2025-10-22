@@ -80,7 +80,7 @@
                 <tr v-for="item in stats.history">
                   <td>[[item.task_name]]</td>
                   <td>[[item.time]]</td>
-                  <td>[[item.duration]]ms</td>
+                  <td>[[item.duration]]s</td>
                   <td><span :class="'badge ' + (item.success ? 'bg-success' : 'bg-danger')">[[item.success ? 'Success' : 'Failed']]</span></td>  
                 </tr>
               </tbody>  
