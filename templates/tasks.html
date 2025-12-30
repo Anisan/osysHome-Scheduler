@@ -22,11 +22,12 @@
         <th scope="col" @click="sortBy('expire')" :class="getSortClass('expire')">{{ _('Expire')}}</th>
         <th scope="col" @click="sortBy('started')" :class="getSortClass('started')">{{ _('Started')}}</th>
         <th scope="col" @click="sortBy('cronetab')" :class="getSortClass('cronetab')">{{ _('Cron')}}</th>
+        <th scope="col" @click="sortBy('active')" :class="getSortClass('active')">{{ _('Active')}}</th>
         <th>{{ _('Actions')}}</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="task,index in filteredData" :key="index">
+      <tr v-for="task,index in filteredData" :key="index" :class="{'task-inactive': task.active === false}">
         <th scope="row">[[task.id]]</th>
         <td>[[task.name]]</td>
         <td>[[task.code]]</td>
@@ -35,8 +36,20 @@
         <td nowrap>[[task.started]]</td>
         <td nowrap>[[task.crontab]]</td>
         <td nowrap>
+          <span v-if="task.active !== false" class="badge bg-success">[[labels.active]]</span>
+          <span v-else class="badge bg-secondary">[[labels.inactive]]</span>
+        </td>
+        <td nowrap>
           <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
-              class="fas fa-edit" title="{{ _('Edit')}}"></i></a>
+              class="fas fa-edit" :title="labels.edit"></i></a>
+          <button v-if="task.active !== false" @click="disableTask(task.id)" class="btn btn-secondary btn-sm" 
+            :title="labels.disable" :disabled="loading">
+            <i class="fas fa-pause"></i>
+          </button>
+          <button v-else @click="enableTask(task.id)" class="btn btn-secondary btn-sm" 
+            :title="labels.enable" :disabled="loading">
+            <i class="fas fa-play"></i>
+          </button>
           <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
             class="btn btn-danger btn-sm" role="button" title="{{ _('Delete')}}"><i class="fas fa-trash"></i></a>
         </td>
@@ -56,6 +69,13 @@
       tasks: [],
       loading: false,
       error: null,
+      labels: {
+        active: '{{ _("Active") }}',
+        inactive: '{{ _("Inactive") }}',
+        enable: '{{ _("Enable") }}',
+        disable: '{{ _("Disable") }}',
+        edit: '{{ _("Edit") }}'
+      }
     },
     async created() {
       await this.fetchTasks()
@@ -123,6 +143,40 @@
           })
           ;
       },
+      enableTask(taskId) {
+        this.loading = true
+        axios.post(`/api/Scheduler/task/${taskId}/enable`)
+          .then(response => {
+            if (response.data.success) {
+              this.fetchTasks()
+            } else {
+              alert(response.data.msg || 'Failed to enable task')
+              this.loading = false
+            }
+          })
+          .catch(error => {
+            console.log(error)
+            alert('Error enabling task')
+            this.loading = false
+          })
+      },
+      disableTask(taskId) {
+        this.loading = true
+        axios.post(`/api/Scheduler/task/${taskId}/disable`)
+          .then(response => {
+            if (response.data.success) {
+              this.fetchTasks()
+            } else {
+              alert(response.data.msg || 'Failed to disable task')
+              this.loading = false
+            }
+          })
+          .catch(error => {
+            console.log(error)
+            alert('Error disabling task')
+            this.loading = false
+          })
+      },
       sortBy(key) {
         if (this.sortKey === key) {
           this.sortAsc = !this.sortAsc;
@@ -160,6 +214,24 @@
   .sortable.desc:after {
       border-width: 0 10px 10px;
       border-color: transparent transparent #000 transparent;
+  }
+  .task-inactive {
+      background-color: #f8f9fa !important;
+  }
+  .task-inactive td,
+  .task-inactive th {
+      text-decoration: line-through;
+      color: #6c757d;
+  }
+  .task-inactive .badge {
+      text-decoration: none;
+  }
+  /* Явно исключаем колонку с кнопками из стилей неактивных задач */
+  .task-inactive td:last-child,
+  .task-inactive th:last-child {
+      text-decoration: none !important;
+      opacity: 1 !important;
+      color: inherit !important;
   }
 </style>
 {% endblock %}

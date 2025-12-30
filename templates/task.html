@@ -43,6 +43,14 @@
             <label class="form-label">{{ _('Expire') }}</label>
             {{ form.expire(class="form-control") }}
         </div>
+        <div class="mb-3">
+            <div class="form-check">
+                {{ form.active(class="form-check-input") }}
+                <label class="form-check-label" for="{{ form.active.id }}">
+                    {{ _('Active') }}
+                </label>
+            </div>
+        </div>
     </div>
     <!-- Кнопка отправки формы -->
     <button type="submit" class="btn btn-primary">{{ _('Submit')}}</button>

@@ -83,6 +83,8 @@ class Scheduler(BasePlugin):
                     utc_dt = convert_local_to_utc(dt)
                     tsk.runtime = utc_dt
                     tsk.expire = utc_dt + datetime.timedelta(1800)
+                if not hasattr(tsk, 'active') or tsk.active is None:
+                    tsk.active = True
                 with session_scope() as session:
                     session.add(tsk)
                     session.commit()
@@ -110,6 +112,8 @@ class Scheduler(BasePlugin):
                         utc_dt = convert_local_to_utc(dt)
                         tsk.runtime = utc_dt
                         tsk.expire = utc_dt + datetime.timedelta(1800)
+                    if not hasattr(tsk, 'active') or tsk.active is None:
+                        tsk.active = True
                     session.commit()
                     return redirect("Scheduler")
                 if form.runtime.data:
@@ -132,19 +136,21 @@ class Scheduler(BasePlugin):
         with session_scope() as session:
             content['crontab'] = session.query(Task).filter(Task.crontab is not None, Task.crontab != '').count()
             content['count'] = session.query(Task).count()
+            content['active'] = session.query(Task).filter(or_(Task.active == True, Task.active.is_(None))).count()
         if hasattr(self, '_active_tasks'):
             content['monitoring'] = self.poolThread.get_monitoring_stats()
         return render_template("widget_scheduler.html",**content)
 
     def cyclic_task(self):
         with session_scope() as session:
-            sql = delete(Task).where(Task.expire < get_now_to_utc())
+            sql = delete(Task).where(Task.expire < get_now_to_utc(), or_(Task.active == True, Task.active.is_(None)))
             session.execute(sql)
             session.commit()
 
             tasks = (
                 session.query(Task)
                 .filter(Task.runtime <= get_now_to_utc())
+                .filter(or_(Task.active == True, Task.active.is_(None)))
                 .all()
             )
             for task in tasks:
