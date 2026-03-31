@@ -12,14 +12,10 @@
   "Generation": "Поколение пула",
   "Max Active Tasks": "Максимум одновременных задач",
   "Max Workers": "Максимум рабочих процессов",
-  "Monitoring": "Мониторинг",
   "Queue": "В очереди",
-  "Rejected": "Отброшено",
   "Scheduler": "Планировщик",
-  "Search...": "Поиск...",
   "Started": "Запущено",
   "Tasks": "Задачи",
   "Thread Pool Statistics": "Статистика пула потоков",
-  "Time end": "Время",
-  "Total": "Всего"
+  "Time end": "Время"
 }

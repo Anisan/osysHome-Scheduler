@@ -12,14 +12,10 @@
   "Generation": "Generation",
   "Max Active Tasks": "Max Active Tasks",
   "Max Workers": "Max Workers",
-  "Monitoring": "Monitoring",
   "Queue": "Queue",
-  "Rejected": "Rejected",
   "Scheduler": "Scheduler",
-  "Search...": "Search...",
   "Started": "Started",
   "Tasks": "Tasks",
   "Thread Pool Statistics": "Thread Pool Statistics",
-  "Time end": "Time end",
-  "Total": "Total"
+  "Time end": "Time end"
 }
