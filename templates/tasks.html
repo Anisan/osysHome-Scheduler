@@ -2,7 +2,7 @@
 {% block tab %}
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/vue@2.js"></script>
 <script src="{{ config.ASSETS_ROOT }}/plugins/vue/axios.min.js"></script>
-<div id="list_tasks">
+<div id="list_tasks" v-cloak>
   <div class="d-flex justify-content-between">
     <button  class="btn btn-primary btn-sm d-flex align-items-center" type="button" @click="fetchTasks()">
       <span v-if="loading" class="fas fa-rotate fa-spin me-2"></span>
