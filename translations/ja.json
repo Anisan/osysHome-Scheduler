@@ -1,0 +1,19 @@
+{
+  "Active Tasks": "アクティブなタスク",
+  "Avg Time": "平均時間",
+  "Completed": "完了",
+  "Count": "カウント",
+  "Execution Time History": "実行時間の履歴",
+  "Execution Time Statistics": "実行時間の統計",
+  "Expire": "期限切れ",
+  "Failed": "失敗した",
+  "Generation": "世代",
+  "Max Active Tasks": "アクティブなタスクの最大数",
+  "Max Workers": "最大労働者数",
+  "Queue": "列",
+  "Scheduler": "スケジューラ",
+  "Started": "開始しました",
+  "Tasks": "タスク",
+  "Thread Pool Statistics": "スレッドプールの統計",
+  "Time end": "時間終了"
+}

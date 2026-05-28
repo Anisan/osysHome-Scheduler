@@ -1,0 +1,19 @@
+{
+  "Active Tasks": "Tareas activas",
+  "Avg Time": "Tiempo promedio",
+  "Completed": "Terminado",
+  "Count": "Contar",
+  "Execution Time History": "Historial de tiempo de ejecución",
+  "Execution Time Statistics": "Estadísticas de tiempo de ejecución",
+  "Expire": "Expirar",
+  "Failed": "Fallido",
+  "Generation": "Generación",
+  "Max Active Tasks": "Tareas activas máximas",
+  "Max Workers": "Trabajadores máximos",
+  "Queue": "Cola",
+  "Scheduler": "Programador",
+  "Started": "Comenzó",
+  "Tasks": "Tareas",
+  "Thread Pool Statistics": "Estadísticas del grupo de subprocesos",
+  "Time end": "Fin del tiempo"
+}

@@ -1,0 +1,19 @@
+{
+  "Active Tasks": "활성 작업",
+  "Avg Time": "평균 시간",
+  "Completed": "완전한",
+  "Count": "세다",
+  "Execution Time History": "실행 시간 기록",
+  "Execution Time Statistics": "실행 시간 통계",
+  "Expire": "내쉬다",
+  "Failed": "실패한",
+  "Generation": "세대",
+  "Max Active Tasks": "최대 활성 작업",
+  "Max Workers": "최대 작업자 수",
+  "Queue": "대기줄",
+  "Scheduler": "스케줄러",
+  "Started": "시작됨",
+  "Tasks": "작업",
+  "Thread Pool Statistics": "스레드 풀 통계",
+  "Time end": "시간 종료"
+}

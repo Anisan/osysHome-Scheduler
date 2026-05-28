@@ -1,0 +1,19 @@
+{
+  "Active Tasks": "Активні завдання",
+  "Avg Time": "Середній час",
+  "Completed": "Завершено",
+  "Count": "Кількість",
+  "Execution Time History": "Історія часу виконання",
+  "Execution Time Statistics": "Статистика часу виконання",
+  "Expire": "Спливає",
+  "Failed": "Помилки",
+  "Generation": "Покоління пулу",
+  "Max Active Tasks": "Максимум одночасних завдань",
+  "Max Workers": "Максимум робочих процесів",
+  "Queue": "У черзі",
+  "Scheduler": "Планувальник",
+  "Started": "Запущено",
+  "Tasks": "Завдання",
+  "Thread Pool Statistics": "Статистика пулу потоків",
+  "Time end": "Час"
+}
