@@ -146,6 +146,7 @@ class Scheduler(BasePlugin):
             sql = delete(Task).where(Task.expire < get_now_to_utc(), or_(Task.active == True, Task.active.is_(None)))
             session.execute(sql)
             session.commit()
+            session.expire_all()
 
             tasks = (
                 session.query(Task)
@@ -154,24 +155,44 @@ class Scheduler(BasePlugin):
                 .all()
             )
             for task in tasks:
-                self.logger.debug('Running task %s', task.name)
-                task.started = get_now_to_utc()
-                session.commit()
-                if not task.crontab:
-                    clearTimeout(task.name)
-                else:
-                    addCronJob(task.name, task.code, task.crontab)
+                task_name = None
+                try:
+                    task_name = task.name
+                    task_code = task.code
+                    task_crontab = task.crontab
 
-                def task_wrapper(code):
-                    def wrapper():
-                        res, success = runCode(code)
-                        if not success:
-                            self.logger.error(res)
-                        else:
-                            if res:
-                                self.logger.debug(res)
-                    return wrapper
+                    self.logger.debug('Running task %s', task_name)
 
-                self.poolThread.submit(task_wrapper(task.code), task_id=task.name)
+                    if task_crontab:
+                        task.started = get_now_to_utc()
+                        session.commit()
+                        addCronJob(task_name, task_code, task_crontab)
+                    else:
+                        clearTimeout(task_name)
+                        session.expire_all()
+
+                    def task_wrapper(code):
+                        def wrapper():
+                            res, success = runCode(code)
+                            if not success:
+                                self.logger.error(res)
+                            else:
+                                if res:
+                                    self.logger.debug(res)
+                        return wrapper
+
+                    self.poolThread.submit(task_wrapper(task_code), task_id=task_name)
+                except Exception as ex:
+                    if not task_name:
+                        try:
+                            task_name = task.name
+                        except Exception:
+                            task_name = '(unknown)'
+                    self.logger.error(
+                        'Error processing task %s: %s',
+                        task_name,
+                        ex,
+                        exc_info=True,
+                    )
 
         self.event.wait(1.0)
