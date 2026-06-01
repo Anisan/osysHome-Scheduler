@@ -5,12 +5,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   
-<div id="monitoring_app">  
-  <div class="container-fluid">  
+<div id="monitoring_app">
+  <div class="container-fluid px-0">
      
     <!-- Статистика пула потоков -->  
-    <div class="d-flex flex-nowrap">
-      <div class="card text-center me-2 mb-2">  
+    <div class="row g-2 mb-2">
+      <div class="col-12 col-xl-4">
+      <div class="card text-center h-100">  
         <div class="card-header">{{ _('Thread Pool Statistics')}}</div>  
                   <div class="card-body">  
                     <h4 class="${statusClass}">[[Object.keys(stats.thread_pool.active_tasks).length]]/[[stats.thread_pool.max_workers]]</h4>  
@@ -32,21 +33,25 @@
                         <small>{{ _('Total')}}: [[stats.execution_time.total_execution_time]]s</small>  
                     </div>  
                 </div>  
-      </div>    
+      </div>
+      </div>
       <!-- Графики -->  
-      <div class="card mb-2 flex-grow-1">  
+      <div class="col-12 col-xl-8">
+      <div class="card h-100">  
         <div class="card-header">{{ _('Execution Time History')}}</div>  
-          <div class="card-body" style="height: 400px;">  
-            <canvas id="executionChart" style="max-height: 350px;"></canvas>  
+          <div class="card-body monitoring-chart-wrap">
+            <canvas id="executionChart"></canvas>
           </div>  
       </div>  
+      </div>
     </div>
-    <div class="d-flex flex-nowrap">
-      <div class="card me-2 flex-grow-1" style="flex-basis: 33.33%;">
+    <div class="row g-2">
+      <div class="col-12 col-lg-4">
+      <div class="card h-100">
         <div class="card-header">{{ _('Active Tasks')}}</div>  
         <div class="card-body">
           <div class="table-responsive">  
-            <table id="tasksTable" class="table table-hover table-striped">  
+            <table id="activeTasksTable" class="table table-hover table-striped">  
               <thead>  
                 <tr>  
                   <th>Task Name</th>  
@@ -63,11 +68,13 @@
           </div>  
         </div>  
       </div>
-      <div class="card  flex-grow-1" style="flex-basis: 66.66%;">
+      </div>
+      <div class="col-12 col-lg-8">
+      <div class="card h-100">
         <div class="card-header">{{ _('Execution Time History')}}</div>  
         <div class="card-body">
           <div class="table-responsive">  
-            <table id="tasksTable" class="table table-hover table-striped">  
+            <table id="historyTasksTable" class="table table-hover table-striped">  
               <thead>  
                 <tr>  
                   <th>Task Name</th>  
@@ -87,6 +94,7 @@
             </table>  
           </div>  
         </div>  
+      </div>
       </div>
     </div>
   </div>  
@@ -187,4 +195,23 @@ new Vue({
   }  
 });  
 </script>  
+<style>
+  .monitoring-chart-wrap {
+    min-height: 280px;
+    height: 100%;
+  }
+  #executionChart {
+    width: 100% !important;
+    max-height: 360px;
+  }
+  @media (max-width: 768px) {
+    .monitoring-chart-wrap {
+      min-height: 240px;
+    }
+    #activeTasksTable,
+    #historyTasksTable {
+      min-width: 460px;
+    }
+  }
+</style>
 {% endblock %}

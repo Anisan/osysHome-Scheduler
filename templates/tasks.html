@@ -12,7 +12,7 @@
       </button>
       <a href="?op=add" class="btn btn-success btn-sm d-flex align-items-center" role="button"><i class="fas fa-plus me-2"></i>{{ _('Add')}}</a>
     </div>
-    <div class="d-flex flex-grow-1" style="flex: 1 1 320px; min-width: 320px;">
+    <div class="d-flex flex-grow-1 scheduler-search-wrap">
       <div class="input-group flex-grow-1">
         <span class="input-group-text"><i class="fas fa-filter"></i></span>
         <input v-model="search" type="text" class="form-control" placeholder="{{ _('Search...')}}">
@@ -22,67 +22,69 @@
       </div>
     </div>
   </div>
-  <table class="table table-sm table-striped table-hover scheduler-tasks-table">
-    <thead>
-      <tr>
-        <th scope="col" class="col-id">#</th>
-        <th scope="col" class="col-name sortable-col" @click="sortBy('name')" :class="getSortClass('name')">{{ _('Name')}}</th>
-        <th scope="col" class="col-code sortable-col" @click="sortBy('code')" :class="getSortClass('code')">{{ _('Code')}}</th>
-        <th scope="col" class="col-schedule sortable-col" @click="sortBy('runtime')" :class="getSortClass('runtime')">{{ _('Schedule')}}</th>
-        <th scope="col" class="col-active sortable-col" @click="sortBy('active')" :class="getSortClass('active')">{{ _('Active')}}</th>
-        <th class="col-actions">{{ _('Actions')}}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="task,index in filteredData" :key="index" :class="{'task-inactive': task.active === false}">
-        <th scope="row">[[task.id]]</th>
-        <td class="cell-name">[[task.name]]</td>
-        <td class="cell-code">[[task.code]]</td>
-        <td class="schedule-cell">
-          <div class="schedule-grid">
-            <div class="schedule-col">
-              <div class="schedule-line">
-                <span class="schedule-label">[[labels.runtime]]:</span>
-                <span>[[formatDateTime(task.runtime)]]</span>
+  <div class="table-responsive scheduler-table-wrap">
+    <table class="table table-sm table-striped table-hover scheduler-tasks-table">
+      <thead>
+        <tr>
+          <th scope="col" class="col-id">#</th>
+          <th scope="col" class="col-name sortable-col" @click="sortBy('name')" :class="getSortClass('name')">{{ _('Name')}}</th>
+          <th scope="col" class="col-code sortable-col" @click="sortBy('code')" :class="getSortClass('code')">{{ _('Code')}}</th>
+          <th scope="col" class="col-schedule sortable-col" @click="sortBy('runtime')" :class="getSortClass('runtime')">{{ _('Schedule')}}</th>
+          <th scope="col" class="col-active sortable-col" @click="sortBy('active')" :class="getSortClass('active')">{{ _('Active')}}</th>
+          <th class="col-actions">{{ _('Actions')}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="task,index in filteredData" :key="index" :class="{'task-inactive': task.active === false}">
+          <th scope="row" data-label="#">[[task.id]]</th>
+          <td class="cell-name" data-label="{{ _('Name')}}">[[task.name]]</td>
+          <td class="cell-code" data-label="{{ _('Code')}}">[[task.code]]</td>
+          <td class="schedule-cell" data-label="{{ _('Schedule')}}">
+            <div class="schedule-grid">
+              <div class="schedule-col">
+                <div class="schedule-line">
+                  <span class="schedule-label">[[labels.runtime]]:</span>
+                  <span>[[formatDateTime(task.runtime)]]</span>
+                </div>
+                <div v-if="task.crontab" class="schedule-line">
+                  <span class="schedule-label">{{ _('Cron') }}:</span>
+                  <code class="schedule-cron">[[task.crontab]]</code>
+                </div>
               </div>
-              <div v-if="task.crontab" class="schedule-line">
-                <span class="schedule-label">{{ _('Cron') }}:</span>
-                <code class="schedule-cron">[[task.crontab]]</code>
+              <div class="schedule-col">
+                <div v-if="task.started" class="schedule-line">
+                  <span class="schedule-label">[[labels.started]]:</span>
+                  <span>[[formatDateTime(task.started)]]</span>
+                </div>
+                <div v-if="task.expire" class="schedule-line">
+                  <span class="schedule-label">[[labels.expire]]:</span>
+                  <span>[[formatDateTime(task.expire)]]</span>
+                </div>
               </div>
             </div>
-            <div class="schedule-col">
-              <div v-if="task.started" class="schedule-line">
-                <span class="schedule-label">[[labels.started]]:</span>
-                <span>[[formatDateTime(task.started)]]</span>
-              </div>
-              <div v-if="task.expire" class="schedule-line">
-                <span class="schedule-label">[[labels.expire]]:</span>
-                <span>[[formatDateTime(task.expire)]]</span>
-              </div>
-            </div>
-          </div>
-        </td>
-        <td class="col-active text-center">
-          <span v-if="task.active !== false" class="badge bg-success">[[labels.active]]</span>
-          <span v-else class="badge bg-secondary">[[labels.inactive]]</span>
-        </td>
-        <td class="col-actions">
-          <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
-              class="fas fa-edit" :title="labels.edit"></i></a>
-          <button v-if="task.active !== false" @click="disableTask(task.id)" class="btn btn-secondary btn-sm" 
-            :title="labels.disable" :disabled="loading">
-            <i class="fas fa-pause"></i>
-          </button>
-          <button v-else @click="enableTask(task.id)" class="btn btn-secondary btn-sm" 
-            :title="labels.enable" :disabled="loading">
-            <i class="fas fa-play"></i>
-          </button>
-          <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
-            class="btn btn-danger btn-sm" role="button" title="{{ _('Delete')}}"><i class="fas fa-trash"></i></a>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+          </td>
+          <td class="col-active text-center" data-label="{{ _('Active')}}">
+            <span v-if="task.active !== false" class="badge bg-success">[[labels.active]]</span>
+            <span v-else class="badge bg-secondary">[[labels.inactive]]</span>
+          </td>
+          <td class="col-actions" data-label="{{ _('Actions')}}">
+            <a :href="'?task='+task.id+'&op=edit'" class="btn btn-warning btn-sm" role="button"><i
+                class="fas fa-edit" :title="labels.edit"></i></a>
+            <button v-if="task.active !== false" @click="disableTask(task.id)" class="btn btn-secondary btn-sm"
+              :title="labels.disable" :disabled="loading">
+              <i class="fas fa-pause"></i>
+            </button>
+            <button v-else @click="enableTask(task.id)" class="btn btn-secondary btn-sm"
+              :title="labels.enable" :disabled="loading">
+              <i class="fas fa-play"></i>
+            </button>
+            <a :href="'?task='+task.id+'&op=delete'" onClick="return confirm('Delete record?')"
+              class="btn btn-danger btn-sm" role="button" title="{{ _('Delete')}}"><i class="fas fa-trash"></i></a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -245,6 +247,10 @@
   .scheduler-tasks-table {
     width: 100%;
   }
+  .scheduler-search-wrap {
+    flex: 1 1 320px;
+    min-width: 320px;
+  }
   .scheduler-tasks-table th,
   .scheduler-tasks-table td {
     vertical-align: top;
@@ -325,6 +331,118 @@
       text-decoration: none !important;
       opacity: 1 !important;
       color: inherit !important;
+  }
+  @media (max-width: 992px) {
+    .scheduler-search-wrap {
+      min-width: 220px;
+    }
+    .schedule-grid {
+      grid-template-columns: 1fr;
+      gap: 0.25rem 0;
+    }
+  }
+  @media (max-width: 768px) {
+    .scheduler-search-wrap {
+      flex: 1 1 100%;
+      min-width: 100%;
+    }
+    .scheduler-tasks-table thead {
+      display: none;
+    }
+    .scheduler-tasks-table tbody tr {
+      display: block;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: 0.4rem;
+      background: var(--bs-body-bg);
+      overflow: hidden;
+    }
+    .scheduler-tasks-table tbody th,
+    .scheduler-tasks-table tbody td {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr);
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 0;
+      border-bottom: 1px solid var(--bs-border-color-translucent);
+      align-items: flex-start;
+      gap: 0.5rem;
+      white-space: normal;
+      line-height: 1.25;
+    }
+    .scheduler-tasks-table .col-id,
+    .scheduler-tasks-table .col-active,
+    .scheduler-tasks-table .col-actions,
+    .scheduler-tasks-table .schedule-cell {
+      width: auto;
+      white-space: normal;
+    }
+    .scheduler-tasks-table .cell-name {
+      white-space: normal;
+    }
+    .scheduler-tasks-table tbody tr > *::before {
+      content: attr(data-label);
+      min-width: 0;
+      font-weight: 600;
+      color: var(--bs-secondary-color);
+      font-size: 0.95em;
+    }
+    .scheduler-tasks-table .schedule-cell {
+      font-size: 0.88rem;
+      white-space: normal;
+    }
+    .scheduler-tasks-table .schedule-grid {
+      grid-template-columns: 1fr;
+      gap: 0.2rem 0;
+    }
+    .scheduler-tasks-table .schedule-line {
+      display: flex;
+      align-items: baseline;
+      gap: 0.2rem;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+    .scheduler-tasks-table .schedule-label {
+      margin-right: 0.2rem;
+      white-space: nowrap;
+    }
+    .scheduler-tasks-table .col-active {
+      text-align: left !important;
+    }
+    .scheduler-tasks-table .badge {
+      padding: 0.3em 0.65em;
+      font-size: 0.86rem;
+      line-height: 1.1;
+    }
+    .scheduler-tasks-table tbody tr > *:last-child {
+      border-bottom: 0;
+    }
+    .scheduler-tasks-table .col-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+      align-items: center;
+      justify-content: stretch;
+    }
+    .scheduler-tasks-table .col-actions::before {
+      content: none;
+    }
+    .scheduler-tasks-table .col-actions .btn {
+      width: 100%;
+      min-height: 2rem;
+      padding: 0.35rem 0.3rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .scheduler-tasks-table .col-actions .btn i {
+      font-size: 0.85rem;
+    }
+    .task-inactive {
+      background-color: var(--bs-secondary-bg) !important;
+    }
   }
 </style>
 {% endblock %}
