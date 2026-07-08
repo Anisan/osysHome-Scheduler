@@ -1,8 +1,6 @@
 {
   "Active Tasks": "活动任务",
   "Avg Time": "平均时间",
-  "Completed": "完全的",
-  "Count": "数数",
   "Execution Time History": "执行时间历史记录",
   "Execution Time Statistics": "执行时间统计",
   "Expire": "到期",
@@ -13,7 +11,6 @@
   "Queue": "队列",
   "Scheduler": "调度程序",
   "Started": "开始",
-  "Tasks": "任务",
   "Thread Pool Statistics": "线程池统计",
   "Time end": "时间结束"
 }

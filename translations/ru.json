@@ -1,8 +1,6 @@
 {
   "Active Tasks": "Активные задачи",
   "Avg Time": "Среднее время",
-  "Completed": "Завершено",
-  "Count": "Количество",
   "Execution Time History": "История времени выполнения",
   "Execution Time Statistics": "Статистика времени выполнения",
   "Expire": "Истекает",
@@ -11,10 +9,8 @@
   "Max Active Tasks": "Максимум одновременных задач",
   "Max Workers": "Максимум рабочих процессов",
   "Queue": "В очереди",
-  "Schedule": "Расписание",
   "Scheduler": "Планировщик",
   "Started": "Запущено",
-  "Tasks": "Задачи",
   "Thread Pool Statistics": "Статистика пула потоков",
   "Time end": "Время"
 }

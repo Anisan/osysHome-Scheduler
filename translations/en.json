@@ -1,8 +1,6 @@
 {
   "Active Tasks": "Active Tasks",
   "Avg Time": "Avg Time",
-  "Completed": "Completed",
-  "Count": "Count",
   "Execution Time History": "Execution Time History",
   "Execution Time Statistics": "Execution Time Statistics",
   "Expire": "Expire",
@@ -13,7 +11,6 @@
   "Queue": "Queue",
   "Scheduler": "Scheduler",
   "Started": "Started",
-  "Tasks": "Tasks",
   "Thread Pool Statistics": "Thread Pool Statistics",
   "Time end": "Time end"
 }

@@ -1,8 +1,6 @@
 {
   "Active Tasks": "Aktywne zadania",
   "Avg Time": "Średni czas",
-  "Completed": "Zakończony",
-  "Count": "Liczyć",
   "Execution Time History": "Historia czasu wykonania",
   "Execution Time Statistics": "Statystyki czasu wykonania",
   "Expire": "Wygasać",
@@ -13,7 +11,6 @@
   "Queue": "Kolejka",
   "Scheduler": "Harmonogram",
   "Started": "Rozpoczęło się",
-  "Tasks": "Zadania",
   "Thread Pool Statistics": "Statystyki puli wątków",
   "Time end": "Koniec czasu"
 }
