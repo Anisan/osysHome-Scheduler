@@ -1,10 +1,43 @@
 # MCP — Scheduler
 
+Плагин выполняет Python-код по расписанию (cron или одноразовый запуск). Для runtime-операций используйте `invoke`.
+
+## Plugin notes
+
+- Код задач выполняется через `runCode` (та же песочница, что у методов объектов).
+- **Cron-задача:** задайте `crontab` (синтаксис croniter, обычно 5 полей). `runtime`/`expire` пересчитываются при сохранении.
+- **Одноразовая задача:** оставьте `crontab` пустым; задайте `runtime` (локальное время). `expire` по умолчанию = runtime + 30 мин.
+- Перед upsert проверяйте cron через `validate_crontab` (preview `next_runs`).
+- Перед сохранением тестируйте код: `validate_entity_code` и `run_entity_dry`.
+- `enable_task` / `disable_task` вызывают `enableJob`/`disableJob`.
+- `run_task_now` — немедленный запуск кода без изменения расписания.
+- `get_pool_stats` — статистика пула потоков планировщика.
+- Поле `started` выставляется при dispatch cron-задачи (**read-only** через MCP).
+
 ## Collections
 
 | ID | binding_mode | has_code | Описание |
 |----|--------------|----------|----------|
 | `tasks` | `none` | yes | Задачи планировщика (cron или одноразовый запуск) |
+
+### Фильтры list_entities
+
+| Параметр | Описание |
+|----------|----------|
+| `query` | Поиск по name, code, crontab |
+| `active_only` | Только активные задачи |
+| `cron_only` | Только задачи с crontab |
+| `one_shot_only` | Только одноразовые задачи (без crontab) |
+
+## Операции (invoke)
+
+| operation | Описание |
+|-----------|----------|
+| `enable_task` | Включить задачу (`task_id` или `name`) |
+| `disable_task` | Отключить задачу |
+| `validate_crontab` | Проверить cron и показать ближайшие запуски |
+| `run_task_now` | Немедленно выполнить сохранённый Python-код задачи |
+| `get_pool_stats` | Статистика пула потоков планировщика |
 
 ## Cron
 
@@ -76,6 +109,32 @@
 }
 ```
 
+### Немедленно выполнить задачу
+
+```json
+{
+  "plugin": "Scheduler",
+  "action": "invoke",
+  "args": {
+    "operation": "run_task_now",
+    "params": {"name": "daily_backup", "params": {}}
+  }
+}
+```
+
+### Статистика пула потоков
+
+```json
+{
+  "plugin": "Scheduler",
+  "action": "invoke",
+  "args": {
+    "operation": "get_pool_stats",
+    "params": {}
+  }
+}
+```
+
 ### Отключить задачу
 
 ```json
@@ -102,7 +161,7 @@
 }
 ```
 
-### Только активные задачи
+### Только активные cron-задачи
 
 ```json
 {
@@ -110,7 +169,8 @@
   "action": "list_entities",
   "args": {
     "collection": "tasks",
-    "active_only": true
+    "active_only": true,
+    "cron_only": true
   }
 }
 ```

@@ -182,16 +182,38 @@ def run_task_code_dry(code: str, params: Optional[dict] = None) -> dict:
     }
 
 
-def list_tasks(query: str = None, limit: int = 100, active_only: bool = False) -> list[dict]:
+def list_tasks(
+    query: str = None,
+    limit: int = 100,
+    active_only: bool = False,
+    cron_only: bool = False,
+    one_shot_only: bool = False,
+) -> list[dict]:
     limit = max(1, min(int(limit or 100), 5000))
     q = Task.query
     if active_only:
         q = q.filter(or_(Task.active == True, Task.active.is_(None)))  # noqa: E712
+    if cron_only:
+        q = q.filter(Task.crontab.isnot(None), Task.crontab != "")
+    if one_shot_only:
+        q = q.filter(or_(Task.crontab.is_(None), Task.crontab == ""))
     if query:
         like = f"%{query}%"
         q = q.filter(or_(Task.name.ilike(like), Task.code.ilike(like), Task.crontab.ilike(like)))
     rows = q.order_by(Task.name).limit(limit).all()
     return [task_to_dict(row) for row in rows]
+
+
+def run_task_now(task_id=None, name: str = None, params: Optional[dict] = None) -> dict:
+    task = resolve_task(task_id=task_id, name=name)
+    result = run_task_code_dry(task.code, params=params)
+    return {
+        "task_id": task.id,
+        "name": task.name,
+        "success": bool(result.get("success")),
+        "output": result.get("output"),
+        "validation": result.get("validation"),
+    }
 
 
 def task_to_form_runtime(task: Task) -> Task:

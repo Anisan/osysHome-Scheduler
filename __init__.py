@@ -306,9 +306,24 @@ class Scheduler(BasePlugin):
         from plugins.Scheduler import mcp_support
         return mcp_support.mcp_entity_schema(collection)
 
-    def mcp_list_entities(self, collection: str, query: str = None, limit: int = 100, active_only=None):
+    def mcp_list_entities(
+        self,
+        collection: str,
+        query: str = None,
+        limit: int = 100,
+        active_only=None,
+        cron_only=None,
+        one_shot_only=None,
+    ):
         from plugins.Scheduler import mcp_support
-        return mcp_support.mcp_list_entities(collection, query=query, limit=limit, active_only=active_only)
+        return mcp_support.mcp_list_entities(
+            collection,
+            query=query,
+            limit=limit,
+            active_only=active_only,
+            cron_only=cron_only,
+            one_shot_only=one_shot_only,
+        )
 
     def mcp_get_entity(self, collection: str, entity_id):
         from plugins.Scheduler import mcp_support
@@ -353,3 +368,7 @@ class Scheduler(BasePlugin):
     def mcp_prompts(self):
         from plugins.Scheduler import mcp_support
         return mcp_support.mcp_descriptors()[2]
+
+    def mcp_get_prompt(self, name: str, arguments: dict = None):
+        from plugins.Scheduler import mcp_support
+        return mcp_support.mcp_get_prompt(name, arguments or {})
