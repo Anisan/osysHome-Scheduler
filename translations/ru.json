@@ -9,6 +9,7 @@
   "Max Active Tasks": "Максимум одновременных задач",
   "Max Workers": "Максимум рабочих процессов",
   "Queue": "В очереди",
+  "Rejected": "Отклоненный",
   "Scheduler": "Планировщик",
   "Started": "Запущено",
   "Thread Pool Statistics": "Статистика пула потоков",

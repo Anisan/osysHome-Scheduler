@@ -42,7 +42,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.6"
+        self.version = "0.7"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)

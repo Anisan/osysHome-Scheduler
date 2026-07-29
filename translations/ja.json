@@ -9,6 +9,7 @@
   "Max Active Tasks": "アクティブなタスクの最大数",
   "Max Workers": "最大労働者数",
   "Queue": "列",
+  "Rejected": "拒否されました",
   "Scheduler": "スケジューラ",
   "Started": "開始しました",
   "Thread Pool Statistics": "スレッドプールの統計",

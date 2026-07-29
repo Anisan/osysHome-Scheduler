@@ -105,17 +105,18 @@ def save_task(payload: Dict[str, Any], entity_id: Optional[int] = None) -> Task:
         message = validation.get("errors", [{}])[0].get("message", "Invalid code")
         raise ValueError(f"Invalid code: {message}")
 
-    existing = Task.query.filter(Task.name == name).one_or_none()
-    if existing is not None and (entity_id is None or existing.id != int(entity_id)):
-        raise ValueError(f"Task name already exists: {name}")
-
     if entity_id is not None:
         task = Task.query.get(entity_id)
         if task is None:
             raise ValueError(f"Task not found: {entity_id}")
+        existing = Task.query.filter(Task.name == name, Task.id != int(entity_id)).one_or_none()
+        if existing is not None:
+            raise ValueError(f"Task name already exists: {name}")
     else:
-        task = Task()
-        db.session.add(task)
+        task = Task.query.filter(Task.name == name).one_or_none()
+        if task is None:
+            task = Task()
+            db.session.add(task)
 
     task.name = name
     task.code = code_text
@@ -184,7 +185,7 @@ def run_task_code_dry(code: str, params: Optional[dict] = None) -> dict:
 
 def list_tasks(
     query: str = None,
-    limit: int = 100,
+    limit: int = 500,
     active_only: bool = False,
     cron_only: bool = False,
     one_shot_only: bool = False,

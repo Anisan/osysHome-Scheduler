@@ -398,7 +398,16 @@ def mcp_validate_entity(collection: str, payload: dict, entity_id=None) -> dict:
     if name:
         duplicate = Task.query.filter(Task.name == name).one_or_none()
         if duplicate is not None and (entity_id in (None, "") or duplicate.id != int(entity_id)):
-            errors.append({"field": "name", "message": f"task name already exists: {name}"})
+            if entity_id in (None, ""):
+                warnings.append({
+                    "field": "name",
+                    "message": (
+                        f"task name already exists: {name}; "
+                        f"upsert without entity_id will update id={duplicate.id}"
+                    ),
+                })
+            else:
+                errors.append({"field": "name", "message": f"task name already exists: {name}"})
 
     code = str(merged.get("code") or "")
     if code:

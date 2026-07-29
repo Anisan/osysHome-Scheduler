@@ -9,6 +9,7 @@
   "Max Active Tasks": "최대 활성 작업",
   "Max Workers": "최대 작업자 수",
   "Queue": "대기줄",
+  "Rejected": "거부됨",
   "Scheduler": "스케줄러",
   "Started": "시작됨",
   "Thread Pool Statistics": "스레드 풀 통계",

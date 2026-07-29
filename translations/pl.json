@@ -9,6 +9,7 @@
   "Max Active Tasks": "Maksymalna liczba aktywnych zadań",
   "Max Workers": "Maksymalna liczba pracowników",
   "Queue": "Kolejka",
+  "Rejected": "Odrzucony",
   "Scheduler": "Harmonogram",
   "Started": "Rozpoczęło się",
   "Thread Pool Statistics": "Statystyki puli wątków",

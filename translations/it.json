@@ -9,6 +9,7 @@
   "Max Active Tasks": "Numero massimo di attività attive",
   "Max Workers": "Lavoratori massimi",
   "Queue": "Coda",
+  "Rejected": "Respinto",
   "Scheduler": "Pianificatore",
   "Started": "Iniziato",
   "Thread Pool Statistics": "Statistiche del pool di thread",

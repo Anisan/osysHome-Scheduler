@@ -9,6 +9,7 @@
   "Max Active Tasks": "最大活动任务数",
   "Max Workers": "最大工人数",
   "Queue": "队列",
+  "Rejected": "被拒绝",
   "Scheduler": "调度程序",
   "Started": "开始",
   "Thread Pool Statistics": "线程池统计",

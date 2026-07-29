@@ -9,6 +9,7 @@
   "Max Active Tasks": "Tareas activas máximas",
   "Max Workers": "Trabajadores máximos",
   "Queue": "Cola",
+  "Rejected": "Rechazado",
   "Scheduler": "Programador",
   "Started": "Comenzó",
   "Thread Pool Statistics": "Estadísticas del grupo de subprocesos",
