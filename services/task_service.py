@@ -11,7 +11,15 @@ from sqlalchemy import delete, or_
 from app.core.lib.common import disableJob, enableJob, runCode
 from app.core.lib.crontab import nextStartCronJob, validate_cron_expression
 from app.core.models.Tasks import Task
-from app.database import convert_local_to_utc, convert_utc_to_local, db, get_now_to_utc, row2dict
+from app.database import (
+    convert_local_to_utc,
+    convert_utc_to_local,
+    db,
+    get_default_timezone,
+    get_now_to_utc,
+    get_user_timezone,
+    row2dict,
+)
 
 
 def _parse_datetime(value) -> Optional[datetime.datetime]:
@@ -39,17 +47,24 @@ def _normalize_crontab(value) -> Optional[str]:
 
 
 def _serialize_datetime(value) -> Optional[str]:
+    """Serialize DB UTC naive datetime as ISO-8601 with Z (UTC)."""
     if value is None:
         return None
     if hasattr(value, "isoformat"):
-        return value.isoformat(sep=" ", timespec="seconds")
+        # Always emit UTC marker so JS Date / clients don't treat naive stamp as local.
+        text = value.isoformat(sep="T", timespec="seconds")
+        if value.tzinfo is not None:
+            utc = value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            text = utc.isoformat(sep="T", timespec="seconds")
+        return text + "Z"
     return str(value)
 
 
 def task_to_dict(task: Task) -> Dict[str, Any]:
     data = row2dict(task)
+    # Always serialize raw UTC from the ORM (row2dict may already localize).
     for field in ("runtime", "expire", "started"):
-        data[field] = _serialize_datetime(data.get(field))
+        data[field] = _serialize_datetime(getattr(task, field, None))
     if data.get("active") is None:
         data["active"] = True
     return data
@@ -73,20 +88,22 @@ def apply_schedule_fields(task: Task, payload: Dict[str, Any]) -> None:
             raise ValueError(f"Invalid crontab: {message}")
         task.crontab = crontab
         next_local = nextStartCronJob(crontab)
-        task.runtime = convert_local_to_utc(next_local)
+        # Cron is computed in server TZ; persist UTC (do not reinterpret as user TZ).
+        task.runtime = convert_local_to_utc(next_local, timezone=get_default_timezone())
         task.expire = task.runtime + datetime.timedelta(seconds=1800)
         return
 
     task.crontab = None
+    user_tz = get_user_timezone()
     runtime = _parse_datetime(payload.get("runtime"))
     if runtime is not None:
-        task.runtime = convert_local_to_utc(runtime)
+        task.runtime = convert_local_to_utc(runtime, timezone=user_tz)
     elif task.runtime is None:
         task.runtime = get_now_to_utc()
 
     expire = _parse_datetime(payload.get("expire"))
     if expire is not None:
-        task.expire = convert_local_to_utc(expire)
+        task.expire = convert_local_to_utc(expire, timezone=user_tz)
     elif task.expire is None:
         task.expire = task.runtime + datetime.timedelta(seconds=1800)
 
@@ -167,6 +184,11 @@ def set_task_active(task_id=None, name: str = None, active: bool = True) -> Task
     refreshed = Task.query.get(task.id)
     if refreshed is None:
         raise ValueError(f"Task not found: {task.id}")
+    # Re-arm cron next run on enable (inactive tasks keep a stale runtime).
+    if active and _normalize_crontab(refreshed.crontab):
+        apply_schedule_fields(refreshed, {"crontab": refreshed.crontab})
+        db.session.commit()
+        db.session.refresh(refreshed)
     return refreshed
 
 
@@ -217,7 +239,21 @@ def run_task_now(task_id=None, name: str = None, params: Optional[dict] = None) 
     }
 
 
+def populate_task_form_datetimes(form, task: Task) -> None:
+    """Fill form datetime fields from UTC DB values without mutating the ORM row.
+
+    Mutating task.runtime/expire in-place inside session_scope() used to commit
+    local wall times back into the DB as if they were UTC.
+    """
+    user_tz = get_user_timezone()
+    if task.runtime:
+        form.runtime.data = convert_utc_to_local(task.runtime, timezone=user_tz)
+    if task.expire:
+        form.expire.data = convert_utc_to_local(task.expire, timezone=user_tz)
+
+
 def task_to_form_runtime(task: Task) -> Task:
+    """Deprecated: mutates ORM. Prefer populate_task_form_datetimes()."""
     if task.runtime:
         task.runtime = convert_utc_to_local(task.runtime)
     if task.expire:

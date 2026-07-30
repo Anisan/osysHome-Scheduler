@@ -15,7 +15,7 @@ Supports:
 import datetime
 from flask import redirect, render_template
 from sqlalchemy import delete, or_
-from app.database import session_scope, get_now_to_utc
+from app.database import session_scope, get_now_to_utc, get_user_timezone
 from app.core.main.BasePlugin import BasePlugin
 from app.core.models.Tasks import Task
 from app.core.lib.common import (
@@ -42,7 +42,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.7"
+        self.version = "0.8"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)
@@ -175,23 +175,26 @@ class Scheduler(BasePlugin):
             return self.render("task.html", {"form": form})
         elif op == "edit":
             tid = int(request.args.get("task"))
-            with session_scope() as session:
-                tsk = session.get(Task, tid)
-                task_service.task_to_form_runtime(tsk)
-                form = TaskForm(obj=tsk)
-                if form.validate_on_submit():
-                    task_service.save_task({
-                        "name": form.name.data,
-                        "code": form.code.data,
-                        "crontab": form.crontab.data or "",
-                        "runtime": form.runtime.data,
-                        "expire": form.expire.data,
-                        "active": form.active.data,
-                    }, entity_id=tid)
-                    return redirect("Scheduler")
+            tsk = Task.query.get(tid)
+            if tsk is None:
+                return redirect("Scheduler")
+            form = TaskForm(obj=tsk)
+            # Convert UTC→local only on the form (do not dirty the ORM row).
+            if not form.is_submitted():
+                task_service.populate_task_form_datetimes(form, tsk)
+            if form.validate_on_submit():
+                task_service.save_task({
+                    "name": form.name.data,
+                    "code": form.code.data,
+                    "crontab": form.crontab.data or "",
+                    "runtime": form.runtime.data,
+                    "expire": form.expire.data,
+                    "active": form.active.data,
+                }, entity_id=tid)
+                return redirect("Scheduler")
             return self.render("task.html", {"form": form})
 
-        return self.render("tasks.html", {"tab":tab})
+        return self.render("tasks.html", {"tab": tab, "display_timezone": get_user_timezone()})
 
     def search(self, query: str) -> list:
         res = []
