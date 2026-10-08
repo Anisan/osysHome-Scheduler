@@ -1,5 +1,6 @@
 {% extends "layouts/module_admin.html" %}
 {% from "macros/code_editor.html" import render_editor %}
+{% from "macros/cron_builder.html" import cron_builder_field, cron_builder_modal, cron_builder_assets %}
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="Scheduler">{{ _('Scheduler')}}</a></li>
@@ -31,10 +32,12 @@
             <label class="form-label">{{ _('Code') }}</label>
             {{ render_editor(form.code, 'python')}}
         </div>
-        <div class="mb-3">
-            <label class="form-label">{{ _('Cron') }}</label>
-            {{ form.crontab(class="form-control") }}
-        </div>
+        {{ cron_builder_field(
+            form.crontab.id,
+            label=_('Cron'),
+            value=form.crontab.data,
+            name=form.crontab.name
+        ) }}
         <div class="mb-3">
             <label class="form-label">{{ _('Runtime') }}</label>
             {{ form.runtime(class="form-control") }}
@@ -56,4 +59,7 @@
     <button type="submit" class="btn btn-primary">{{ _('Submit')}}</button>
     <a href="Scheduler" class="btn btn-secondary">{{ _('Cancel')}}</a>
 </form>
+
+{{ cron_builder_modal() }}
+{{ cron_builder_assets() }}
 {% endblock %}
