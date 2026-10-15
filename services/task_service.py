@@ -196,7 +196,7 @@ def run_task_code_dry(code: str, params: Optional[dict] = None) -> dict:
     validation = validate_task_code(code)
     if not validation.get("ok"):
         return {"ok": False, "validation": validation, "output": None, "success": False}
-    output, success = runCode(code, args=params or {})
+    output, success = runCode(code, args=params or {}, execution_source="Scheduler")
     return {
         "ok": success,
         "validation": validation,

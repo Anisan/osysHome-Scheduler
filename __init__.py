@@ -42,7 +42,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.10"
+        self.version = "0.11"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)
@@ -252,7 +252,7 @@ class Scheduler(BasePlugin):
 
                     def task_wrapper(code):
                         def wrapper():
-                            res, success = runCode(code)
+                            res, success = runCode(code, execution_source=plugin)
                             if not success:
                                 self.logger.error(res)
                                 incrementSystemStatsMetric(plugin, "task_script_errors_total", 1)
