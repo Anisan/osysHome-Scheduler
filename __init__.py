@@ -42,7 +42,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.11"
+        self.version = "0.12"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)
@@ -252,13 +252,15 @@ class Scheduler(BasePlugin):
 
                     def task_wrapper(code):
                         def wrapper():
-                            res, success = runCode(code, execution_source=plugin)
-                            if not success:
-                                self.logger.error(res)
-                                incrementSystemStatsMetric(plugin, "task_script_errors_total", 1)
-                            else:
-                                if res:
-                                    self.logger.debug(res)
+                            # Фоновый пул без HTTP — нужен app context для Flask/g/SQLAlchemy
+                            with self._app.app_context():
+                                res, success = runCode(code, execution_source=plugin)
+                                if not success:
+                                    self.logger.error(res)
+                                    incrementSystemStatsMetric(plugin, "task_script_errors_total", 1)
+                                else:
+                                    if res:
+                                        self.logger.debug(res)
                         return wrapper
 
                     self.poolThread.submit(task_wrapper(task_code), task_id=task_name)
