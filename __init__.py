@@ -42,7 +42,7 @@ class Scheduler(BasePlugin):
         self.system = True
         self.actions = ['cycle','search','widget']
         self.category = "System"
-        self.version = "0.12"
+        self.version = "0.13"
 
         from plugins.Scheduler.api import create_api_ns
         api_ns = create_api_ns(self)
@@ -214,6 +214,9 @@ class Scheduler(BasePlugin):
         return render_template("widget_scheduler.html",**content)
 
     def cyclic_task(self):
+        from app.graceful_shutdown import is_shutting_down
+        if is_shutting_down():
+            return
         incrementSystemStatsMetric(self.name, "cycle_runs_total", 1)
         plugin = self.name
         with session_scope() as session:
@@ -265,6 +268,14 @@ class Scheduler(BasePlugin):
 
                     self.poolThread.submit(task_wrapper(task_code), task_id=task_name)
                 except RuntimeError as ex:
+                    msg = str(ex).lower()
+                    if "shutting down" in msg or "after shutdown" in msg:
+                        self.logger.debug(
+                            'Skip task %s during shutdown: %s',
+                            task_name or '(unknown)',
+                            ex,
+                        )
+                        break
                     if "queue size" in str(ex).lower():
                         incrementSystemStatsMetric(plugin, "tasks_rejected_total", 1)
                     if not task_name:
